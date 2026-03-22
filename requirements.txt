@@ -1,0 +1,24 @@
+# TalentFlow 依赖包
+
+# 核心依赖
+requests>=2.31.0
+
+# PDF解析
+pymupdf>=1.23.0
+pypdf>=3.17.0
+
+# Word解析（可选）
+python-docx>=1.1.0
+
+# 图片OCR（可选）
+pytesseract>=0.3.10
+Pillow>=10.0.0
+
+# 数据处理
+pydantic>=2.5.0
+
+# 日志
+python-dotenv>=1.0.0
+
+# OpenClaw集成（如果作为Skill使用）
+# openclaw-sdk  # 待添加

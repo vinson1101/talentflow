@@ -1,0 +1,108 @@
+{
+  "type": "object",
+  "required": ["jd", "candidates"],
+  "properties": {
+    "jd": {
+      "type": "object",
+      "required": ["title", "must_have"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "must_have": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "硬性要求，不满足基本淘汰"
+        },
+        "nice_to_have": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "加分项"
+        },
+        "salary_range": { "type": "string" },
+        "location": { "type": "string" },
+        "company_context": { "type": "string" },
+        "priority_focus": {
+          "type": "string",
+          "enum": ["skill", "stability", "potential", "conversion"],
+          "description": "本次招聘最看重什么（影响AI判断权重）"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "raw_resume"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "raw_resume": {
+            "type": "string",
+            "minLength": 1
+          },
+          "current_salary": { "type": "string" },
+          "expected_salary": { "type": "string" },
+          "current_status": {
+            "type": "string",
+            "enum": ["active", "passive", "not_looking"],
+            "description": "是否在找工作"
+          },
+          "location": { "type": "string" },
+          "extra_info": { "type": "string" },
+
+          "source": {
+            "type": "object",
+            "description": "来源追溯信息（可选）",
+            "properties": {
+              "platform": { "type": "string" },
+              "channel": { "type": "string" },
+              "file_id": { "type": "string" },
+              "file_name": { "type": "string" },
+              "folder_id": { "type": "string" },
+              "file_url": { "type": "string" }
+            },
+            "additionalProperties": false
+          },
+
+          "ingestion_meta": {
+            "type": "object",
+            "description": "读入元信息（可选）",
+            "properties": {
+              "parse_status": { "type": "string" },
+              "parse_method": { "type": "string" },
+              "text_length": { "type": "number" },
+              "is_truncated": { "type": "boolean" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "meta": {
+      "type": "object",
+      "properties": {
+        "target_top_n": {
+          "type": "number",
+          "description": "希望输出Top多少人"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

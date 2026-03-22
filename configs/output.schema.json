@@ -1,0 +1,132 @@
+{
+  "type": "object",
+  "required": ["overall_diagnosis", "top_recommendations"],
+  "properties": {
+    "overall_diagnosis": {
+      "type": "string",
+      "minLength": 1
+    },
+
+    "top_recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "candidate_id",
+          "rank",
+          "total_score",
+          "decision",
+          "priority",
+          "action_timing",
+          "core_judgement",
+          "reasons",
+          "risks",
+          "score_breakdown",
+          "action"
+        ],
+        "properties": {
+          "candidate_id": { "type": "string" },
+
+          "rank": {
+            "type": "number",
+            "description": "排序位置（1 = 最优）"
+          },
+
+          "total_score": { "type": "number" },
+
+          "decision": {
+            "type": "string",
+            "enum": ["strong_yes", "yes", "maybe", "no"]
+          },
+
+          "priority": {
+            "type": "string",
+            "enum": ["A", "B", "C"]
+          },
+
+          "action_timing": {
+            "type": "string",
+            "enum": ["today", "this_week", "optional"]
+          },
+
+          "core_judgement": {
+            "type": "string"
+          },
+
+          "reasons": {
+            "type": "array",
+            "minItems": 3,
+            "items": { "type": "string" }
+          },
+
+          "risks": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          },
+
+          "score_breakdown": {
+            "type": "object",
+            "required": [
+              "hard_skill",
+              "experience",
+              "stability",
+              "potential",
+              "conversion"
+            ],
+            "properties": {
+              "hard_skill": { "type": "number" },
+              "experience": { "type": "number" },
+              "stability": { "type": "number" },
+              "potential": { "type": "number" },
+              "conversion": { "type": "number" }
+            },
+            "additionalProperties": false
+          },
+
+          "action": {
+            "type": "object",
+            "required": [
+              "should_contact",
+              "hook_message",
+              "verification_question",
+              "message_template",
+              "deep_questions"
+            ],
+            "properties": {
+              "should_contact": { "type": "boolean" },
+
+              "hook_message": {
+                "type": "string",
+                "description": "首句钩子话术，必须有吸引力"
+              },
+
+              "verification_question": {
+                "type": "string",
+                "description": "用于快速验证能力的关键问题"
+              },
+
+              "message_template": {
+                "type": "string",
+                "description": "可直接复制发送的完整话术"
+              },
+
+              "deep_questions": {
+                "type": "array",
+                "minItems": 3,
+                "items": { "type": "string" }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+
+    "batch_advice": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
