@@ -24,13 +24,13 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from adapters.local_adapter import LocalAdapter
 from core.batch_builder import BatchBuilder
 from core.candidate_store import CandidateStore
-from core.evaluator import evaluate_batch
+from core import evaluator as fallback_evaluator
 from core.final_reporter import FinalReporter
 from core.resume_ingest import ingest_resume_files
 from core.runner import run as run_output_processing
 
 
-DEFAULT_FILE_TYPES = ["pdf"]
+DEFAULT_FILE_TYPES = ["pdf", "docx", "txt", "md"]
 BatchEvaluator = Callable[[Dict[str, Any]], str]
 
 
@@ -104,7 +104,7 @@ def process_local_folder(
     batch_input_path = batch_builder.save_batch_input(batch_input, run_dir)
     batch_builder.validate_saved_batch_input(batch_input_path)
 
-    evaluate = evaluator or evaluate_batch
+    evaluate = _resolve_batch_evaluator(evaluator)
     output_text = evaluate(batch_input)
     runner_result = run_output_processing(batch_input, output_text)
 
@@ -123,11 +123,11 @@ def process_local_folder(
             "overall_diagnosis": runner_result["json"].get("overall_diagnosis", ""),
             "batch_advice": runner_result["json"].get("batch_advice", ""),
         },
-        filename="final_report.md",
+        filename="[final_report.md](final_report.md)",
     )
     owner_summary_path = final_reporter.save_owner_summary(
         runner_result["json"].get("top_recommendations", []),
-        filename="owner_summary.md",
+        filename="[owner_summary.md](owner_summary.md)",
     )
 
     run_metadata = batch_builder.build_run_metadata(
@@ -181,13 +181,19 @@ def _local_file_to_resume_file(file_obj: Any) -> Dict[str, Any]:
     }
 
 
+def _resolve_batch_evaluator(evaluator: Optional[BatchEvaluator]) -> BatchEvaluator:
+    if evaluator is not None:
+        return evaluator
+    return fallback_evaluator.evaluate_batch
+
+
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="处理本地/临时目录中的简历文件")
     parser.add_argument("folder_path", help="本地目录或外部已下载好的临时录路径")
     parser.add_argument("--jd", required=True, help="职位描述 JSON 文件路径")
-    parser.add_argument("--types", nargs="+", default=DEFAULT_FILE_TYPES, help="文件类型（默认: pdf）")
+    parser.add_argument("--types", nargs="+", default=DEFAULT_FILE_TYPES, help="文件类型（默认: pdf docx txt md）")
     parser.add_argument("--run-dir", help="运行目录（可选）")
 
     args = parser.parse_args()

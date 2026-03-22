@@ -24,6 +24,7 @@ import requests
 
 
 DEFAULT_SYSTEM_PROMPT_PATH = Path(__file__).resolve().parent.parent / "configs" / "system_prompt.md"
+DEFAULT_OPENCLAW_CONFIG_PATH = Path(__file__).resolve().parent.parent / "openclaw.json"
 DEFAULT_BASE_URL = "https://api.openai.com/v1"
 DEFAULT_MODEL = "gpt-4.1-mini"
 DEFAULT_TEMPERATURE = 0.3
@@ -51,25 +52,57 @@ def load_evaluator_config(
     system_prompt_path: Optional[Path] = None,
     timeout: Optional[int] = None,
 ) -> EvaluatorConfig:
-    """从参数和环境变量加载 evaluator 配置。"""
-    resolved_api_key = api_key or os.environ.get("OPENAI_API_KEY") or os.environ.get("LLM_API_KEY")
-    if not resolved_api_key:
-        raise ValueError("Missing evaluator API key: set OPENAI_API_KEY or LLM_API_KEY")
+    """从参数、openclaw.json 和环境变量加载默认 fallback evaluator 配置。"""
+    file_config = _load_openclaw_config()
 
-    resolved_model = model or os.environ.get("AI_MODEL") or os.environ.get("OPENAI_MODEL") or DEFAULT_MODEL
+    resolved_api_key = (
+        api_key
+        or _get_first_non_empty(file_config, "api_key", "openai_api_key", "llm_api_key")
+        or os.environ.get("OPENAI_API_KEY")
+        or os.environ.get("LLM_API_KEY")
+    )
+    if not resolved_api_key:
+        raise ValueError("Missing evaluator API key: set openclaw.json api_key/openai_api_key or OPENAI_API_KEY/LLM_API_KEY")
+
+    resolved_model = (
+        model
+        or _get_first_non_empty(file_config, "model", "ai_model", "openai_model")
+        or os.environ.get("AI_MODEL")
+        or os.environ.get("OPENAI_MODEL")
+        or DEFAULT_MODEL
+    )
     resolved_temperature = (
         temperature
         if temperature is not None
-        else float(os.environ.get("AI_TEMPERATURE", DEFAULT_TEMPERATURE))
+        else float(
+            _get_first_non_empty(file_config, "temperature", "ai_temperature")
+            or os.environ.get("AI_TEMPERATURE", DEFAULT_TEMPERATURE)
+        )
     )
     resolved_response_format = (
         response_format
+        or _get_first_non_empty(file_config, "response_format", "ai_response_format")
         or os.environ.get("AI_RESPONSE_FORMAT")
         or DEFAULT_RESPONSE_FORMAT
     )
-    resolved_base_url = base_url or os.environ.get("OPENAI_BASE_URL") or os.environ.get("LLM_BASE_URL") or DEFAULT_BASE_URL
-    resolved_timeout = timeout if timeout is not None else int(os.environ.get("AI_TIMEOUT", 120))
-    resolved_prompt_path = Path(system_prompt_path or os.environ.get("SYSTEM_PROMPT_PATH") or DEFAULT_SYSTEM_PROMPT_PATH)
+    resolved_base_url = (
+        base_url
+        or _get_first_non_empty(file_config, "base_url", "openai_base_url", "llm_base_url")
+        or os.environ.get("OPENAI_BASE_URL")
+        or os.environ.get("LLM_BASE_URL")
+        or DEFAULT_BASE_URL
+    )
+    resolved_timeout = (
+        timeout
+        if timeout is not None
+        else int(_get_first_non_empty(file_config, "timeout", "ai_timeout") or os.environ.get("AI_TIMEOUT", 120))
+    )
+    resolved_prompt_path = Path(
+        system_prompt_path
+        or _get_first_non_empty(file_config, "system_prompt_path")
+        or os.environ.get("SYSTEM_PROMPT_PATH")
+        or DEFAULT_SYSTEM_PROMPT_PATH
+    )
 
     return EvaluatorConfig(
         api_key=resolved_api_key,
@@ -80,6 +113,29 @@ def load_evaluator_config(
         system_prompt_path=resolved_prompt_path,
         timeout=resolved_timeout,
     )
+
+
+def _load_openclaw_config() -> Dict[str, Any]:
+    if not DEFAULT_OPENCLAW_CONFIG_PATH.exists():
+        return {}
+
+    try:
+        data = json.loads(DEFAULT_OPENCLAW_CONFIG_PATH.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise ValueError(f"Invalid openclaw.json: {exc}") from exc
+
+    if not isinstance(data, dict):
+        raise ValueError("Invalid openclaw.json: root must be an object")
+
+    return data
+
+
+def _get_first_non_empty(source: Dict[str, Any], *keys: str) -> Optional[Any]:
+    for key in keys:
+        value = source.get(key)
+        if value not in (None, ""):
+            return value
+    return None
 
 
 def evaluate_batch(
