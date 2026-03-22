@@ -54,3 +54,4 @@ Thumbs.db
 
 # OpenClaw specific
 .openclaw/
+feedback_loop.jsonl
