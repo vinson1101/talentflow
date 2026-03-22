@@ -1,17 +1,22 @@
+"""Deprecated compatibility module.
+
+TalentFlow 已收敛为 skill / pipeline。
+旧的 evaluator resolver 设计不再是主路径，保留本模块仅为兼容旧引用。
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict
 
-from core import evaluator as fallback_evaluator
-from core.runtime import RunMode, RuntimeContext
+from core.runtime import RuntimeContext
 
 
 BatchEvaluator = Callable[[Dict[str, Any]], str]
 
 
 class MissingEvaluatorError(RuntimeError):
-    """产品主路径缺少外部 evaluator 时抛出。"""
+    pass
 
 
 @dataclass(frozen=True)
@@ -20,51 +25,18 @@ class ResolvedEvaluator:
     runtime_context: RuntimeContext
 
 
-def resolve_batch_evaluator(
-    evaluator: Optional[BatchEvaluator],
-    *,
-    run_mode: str,
-) -> ResolvedEvaluator:
-    normalized_mode = _normalize_run_mode(run_mode)
-
-    if evaluator is not None:
-        return ResolvedEvaluator(
-            evaluator=evaluator,
-            runtime_context=RuntimeContext(
-                run_mode=normalized_mode,
-                decision_owner="huntmind",
-                evaluator_source="injected",
-                model_identity="huntmind",
-            ),
+def resolve_batch_evaluator(evaluator: BatchEvaluator | None, *, run_mode: str) -> ResolvedEvaluator:
+    if evaluator is None:
+        raise MissingEvaluatorError(
+            "TalentFlow 已调整为 skill / pipeline。请由外部 bot 提供 decision handler，而不是依赖内部 evaluator resolver。"
         )
 
-    if normalized_mode in {
-        RunMode.LOCAL_DEV.value,
-        RunMode.TEST.value,
-        RunMode.EMERGENCY_DEBUG.value,
-    }:
-        return ResolvedEvaluator(
-            evaluator=fallback_evaluator.evaluate_batch,
-            runtime_context=RuntimeContext(
-                run_mode=normalized_mode,
-                decision_owner="talentflow_fallback",
-                evaluator_source="fallback_llm",
-                model_identity="talentflow_fallback_llm",
-            ),
-        )
-
-    raise MissingEvaluatorError(
-        "run_mode=external 时必须显式注入 evaluator；"
-        "TalentFlow 在产品主路径下不允许默认 fallback 到本地 LLM evaluator。"
+    return ResolvedEvaluator(
+        evaluator=evaluator,
+        runtime_context=RuntimeContext(
+            run_mode=run_mode,
+            decision_owner="external_bot",
+            evaluator_source="deprecated",
+            model_identity=None,
+        ),
     )
-
-
-def _normalize_run_mode(run_mode: str) -> str:
-    if not run_mode:
-        return RunMode.EXTERNAL.value
-
-    try:
-        return RunMode(run_mode).value
-    except ValueError as exc:
-        allowed = ", ".join(mode.value for mode in RunMode)
-        raise ValueError(f"Invalid run_mode '{run_mode}'. Allowed values: {allowed}") from exc

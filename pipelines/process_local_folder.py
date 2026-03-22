@@ -1,38 +1,41 @@
 """
-处理本地/临时目录中的简历文件
+处理本地/临时目录中的简历文件。
 
-Pipeline入口：
-1. 扫描本地或外部已下载好的临时目录
-2. 标准化读入简历
-3. 构建并校验符合 input schema 的 batch_input
-4. 调用外部 evaluator（产品主路径）或受控 fallback evaluator（开发/测试路径）
-5. 保存可复盘的运行中间文件与最终产物
+TalentFlow 的职责仅限于：
+1. 扫描目录中的简历文件
+2. 解析并标准化候选人信息
+3. 构建、校验 batch_input
+4. 将 batch_input 交给外部 bot 提供的 decision handler
+5. 对 decision handler 返回结果做结构化后处理并落盘
+
+重要边界：
+- TalentFlow 是招聘 skill / pipeline，不是 AI 员工本体
+- TalentFlow 不负责决定模型、API key、base_url
+- 决策主体始终是外部 bot（如 HuntMind / OpenClaw bot）
 """
 
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import sys
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Callable
 
-# 添加项目根目录到路径
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from adapters.local_adapter import LocalAdapter
 from core.batch_builder import BatchBuilder
 from core.candidate_store import CandidateStore
-from core.evaluator_resolver import resolve_batch_evaluator
 from core.final_reporter import FinalReporter
 from core.resume_ingest import ingest_resume_files
 from core.runner import run as run_output_processing
-from core.runtime import RunMode
 
 
 DEFAULT_FILE_TYPES = ["pdf", "docx", "txt", "md"]
-BatchEvaluator = Callable[[Dict[str, Any]], str]
+BatchDecisionHandler = Callable[[Dict[str, Any]], str]
 
 
 def process_local_folder(
@@ -40,14 +43,14 @@ def process_local_folder(
     jd_data: Dict[str, Any],
     file_types: Optional[List[str]] = None,
     run_dir: Optional[Path] = None,
-    evaluator: Optional[BatchEvaluator] = None,
-    run_mode: str = RunMode.EXTERNAL.value,
+    decision_handler: Optional[BatchDecisionHandler] = None,
+    bot_name: str = "external_bot",
 ) -> Dict[str, Any]:
     """
-    处理本地/临时目录中的简历文件并生成最小完整闭环产物。
+    处理本地/临时目录中的简历文件。
 
-    默认 run_mode=external，表示产品主路径必须显式注入 evaluator。
-    只有 local_dev / test / emergency_debug 才允许使用 TalentFlow 自带 fallback evaluator。
+    - 提供 decision_handler：执行完整评估闭环
+    - 不提供 decision_handler：只做准备工作，生成 batch_input / run_meta，等待 bot 接管
     """
     if run_dir is None:
         from datetime import datetime
@@ -76,15 +79,9 @@ def process_local_folder(
             "failure_count": 0,
             "candidate_count": 0,
             "candidate_paths": [],
-            "run_mode": run_mode,
-            "decision_owner": "not_used",
-            "evaluator_source": "not_used",
-            "model_identity": None,
-            "fallback_allowed": run_mode in {
-                RunMode.LOCAL_DEV.value,
-                RunMode.TEST.value,
-                RunMode.EMERGENCY_DEBUG.value,
-            },
+            "status": "no_files",
+            "decision_owner": bot_name,
+            "decision_handler": "not_called",
         }
         run_meta_path = batch_builder.save_run_metadata(run_metadata, run_dir)
         return {
@@ -105,10 +102,6 @@ def process_local_folder(
             "owner_summary_path": None,
         }
 
-    resolved = resolve_batch_evaluator(evaluator, run_mode=run_mode)
-    evaluate = resolved.evaluator
-    runtime_context = resolved.runtime_context
-
     resume_files = [_local_file_to_resume_file(file_obj) for file_obj in scan_result["files"]]
     ingest_result = ingest_resume_files(resume_files)
 
@@ -122,7 +115,38 @@ def process_local_folder(
     batch_input_path = batch_builder.save_batch_input(batch_input, run_dir)
     batch_builder.validate_saved_batch_input(batch_input_path)
 
-    output_text = evaluate(batch_input)
+    if decision_handler is None:
+        run_metadata = batch_builder.build_run_metadata(
+            ingest_result["candidates"],
+            extra={
+                "source": "local_folder",
+                "folder_path": str(Path(folder_path).resolve()),
+                "scanned_file_count": scan_result["total_files"],
+                "ingest_stats": ingest_result["stats"],
+                "failure_count": len(ingest_result["failures"]),
+                "candidate_paths": candidate_paths,
+                "status": "prepared_only",
+                "decision_owner": bot_name,
+                "decision_handler": "not_provided",
+            },
+        )
+        run_meta_path = batch_builder.save_run_metadata(run_metadata, run_dir)
+        return {
+            "run_dir": str(run_dir),
+            "scan_result": scan_result,
+            "ingest_result": ingest_result,
+            "batch_input": batch_input,
+            "batch_input_path": str(batch_input_path),
+            "run_meta_path": str(run_meta_path),
+            "candidate_paths": candidate_paths,
+            "runner_result": None,
+            "final_output_path": None,
+            "final_report_path": None,
+            "quality_meta_path": None,
+            "owner_summary_path": None,
+        }
+
+    output_text = decision_handler(batch_input)
     runner_result = run_output_processing(batch_input, output_text)
 
     final_output_path = run_dir / "final_output.json"
@@ -160,11 +184,9 @@ def process_local_folder(
             "final_report_path": str(final_report_path),
             "quality_meta_path": str(quality_meta_path),
             "owner_summary_path": str(owner_summary_path),
-            "run_mode": runtime_context.run_mode,
-            "decision_owner": runtime_context.decision_owner,
-            "evaluator_source": runtime_context.evaluator_source,
-            "model_identity": runtime_context.model_identity,
-            "fallback_allowed": runtime_context.fallback_allowed,
+            "status": "completed",
+            "decision_owner": bot_name,
+            "decision_handler": "provided",
         },
     )
     run_meta_path = batch_builder.save_run_metadata(run_metadata, run_dir)
@@ -203,6 +225,19 @@ def _local_file_to_resume_file(file_obj: Any) -> Dict[str, Any]:
     }
 
 
+def load_decision_handler(spec: str) -> BatchDecisionHandler:
+    """从 module:function 形式动态加载 bot 提供的 decision handler。"""
+    if ":" not in spec:
+        raise ValueError("decision handler must be in 'module:function' format")
+
+    module_name, func_name = spec.split(":", 1)
+    module = importlib.import_module(module_name)
+    handler = getattr(module, func_name)
+    if not callable(handler):
+        raise TypeError(f"Loaded decision handler is not callable: {spec}")
+    return handler
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -211,12 +246,8 @@ if __name__ == "__main__":
     parser.add_argument("--jd", required=True, help="职位描述 JSON 文件路径")
     parser.add_argument("--types", nargs="+", default=DEFAULT_FILE_TYPES, help="文件类型（默认: pdf docx txt md）")
     parser.add_argument("--run-dir", help="运行目录（可选）")
-    parser.add_argument(
-        "--run-mode",
-        default=RunMode.EXTERNAL.value,
-        choices=[mode.value for mode in RunMode],
-        help="运行模式：external/local_dev/test/emergency_debug（默认: external）",
-    )
+    parser.add_argument("--decision-handler", help="外部 bot 提供的 decision handler，格式 module:function")
+    parser.add_argument("--bot-name", default="external_bot", help="决策 bot 名称，默认 external_bot")
 
     args = parser.parse_args()
 
@@ -224,12 +255,15 @@ if __name__ == "__main__":
     with open(jd_path, "r", encoding="utf-8") as f:
         jd_data = json.load(f)
 
+    decision_handler = load_decision_handler(args.decision_handler) if args.decision_handler else None
+
     result = process_local_folder(
         folder_path=args.folder_path,
         jd_data=jd_data,
         file_types=args.types,
         run_dir=Path(args.run_dir) if args.run_dir else None,
-        run_mode=args.run_mode,
+        decision_handler=decision_handler,
+        bot_name=args.bot_name,
     )
 
     print(
@@ -245,6 +279,7 @@ if __name__ == "__main__":
                 "final_report_path": result["final_report_path"],
                 "quality_meta_path": result["quality_meta_path"],
                 "owner_summary_path": result["owner_summary_path"],
+                "status": "completed" if result["final_output_path"] else "prepared_only",
             },
             ensure_ascii=False,
             indent=2,
