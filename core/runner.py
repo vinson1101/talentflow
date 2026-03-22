@@ -1,7 +1,8 @@
+import ast
 import json
 import re
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 LOG_FILE = "feedback_loop.jsonl"
 
@@ -10,6 +11,28 @@ VALID_PRIORITIES = {"A", "B", "C"}
 VALID_TIMINGS = {"today", "this_week", "optional"}
 PRIORITY_ORDER = {"A": 0, "B": 1, "C": 2}
 TIMING_ORDER = {"today": 0, "this_week": 1, "optional": 2}
+
+ROLE_KEYWORDS = (
+    "高级产品经理",
+    "产品经理",
+    "项目经理",
+    "产品专员",
+    "产品运营",
+    "运营经理",
+    "销售经理",
+    "研发工程师",
+    "工程师",
+    "顾问",
+)
+LOCATION_KEYWORDS = {
+    "杭州", "宁波", "上海", "北京", "深圳", "广州", "苏州", "南京", "成都",
+    "武汉", "厦门", "天津", "青岛", "西安", "重庆", "长沙", "无锡", "嘉兴",
+}
+NAME_STOPWORDS = {
+    "local", "resume", "candidate", "unknown", "today", "this", "week", "optional",
+    "contact", "rank", "name", "title", "jd", "简历", "候选人", "推荐", "联系",
+    "今天", "本周", "可选", "待定", "待确认", "未知", "岗位", "杭州11", "宁波8",
+}
 
 
 # ==============================
@@ -34,17 +57,39 @@ def _clean_text(value: Any) -> str:
 def _clean_str_list(values: Any) -> List[str]:
     if not isinstance(values, list):
         return []
-    cleaned = []
-    for v in values:
-        s = _clean_text(v)
-        if s:
-            cleaned.append(s)
+
+    cleaned: List[str] = []
+    for value in values:
+        text = _clean_text(value)
+        if text:
+            cleaned.append(text)
     return cleaned
 
 
-def _normalize_risk(value: Any) -> str:
+def _try_parse_dict_like(value: Any) -> Optional[Dict[str, Any]]:
     if isinstance(value, dict):
-        return _clean_text(value.get("description"))
+        return value
+
+    text = _clean_text(value)
+    if not text or not text.startswith("{") or not text.endswith("}"):
+        return None
+
+    for parser in (json.loads, ast.literal_eval):
+        try:
+            parsed = parser(text)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
+            continue
+    return None
+
+
+def _normalize_risk(value: Any) -> str:
+    parsed = _try_parse_dict_like(value)
+    if parsed is not None:
+        return _clean_text(parsed.get("description") or parsed.get("risk") or parsed.get("text"))
+    if isinstance(value, dict):
+        return _clean_text(value.get("description") or value.get("risk") or value.get("text"))
     return _clean_text(value)
 
 
@@ -52,11 +97,13 @@ def _clean_risk_list(values: Any) -> List[str]:
     if not isinstance(values, list):
         return []
 
-    cleaned = []
+    cleaned: List[str] = []
+    seen = set()
     for value in values:
         risk = _normalize_risk(value)
-        if risk:
+        if risk and risk not in seen:
             cleaned.append(risk)
+            seen.add(risk)
     return cleaned
 
 
@@ -69,81 +116,348 @@ def _build_candidate_lookup(input_data: Dict[str, Any]) -> Dict[str, Dict[str, A
     for candidate in candidates:
         if not isinstance(candidate, dict):
             continue
-        candidate_id = _clean_text(candidate.get("id"))
-        if candidate_id:
-            lookup[candidate_id] = candidate
+
+        for key in ("id", "candidate_id", "file_id"):
+            candidate_id = _clean_text(candidate.get(key))
+            if candidate_id:
+                lookup[candidate_id] = candidate
     return lookup
 
 
-def _extract_role_label(candidate: Dict[str, Any]) -> str:
-    for key in ("role_label", "job_title", "title"):
-        value = _clean_text(candidate.get(key))
-        if value:
-            return value
+def _split_identifier_tokens(value: str) -> List[str]:
+    text = _clean_text(value)
+    if not text:
+        return []
+    tokens = re.split(r"[\s_\-【】\[\]\(\)（）/|]+", text)
+    return [token.strip() for token in tokens if token and token.strip()]
 
-    extra_info = _clean_text(candidate.get("extra_info"))
-    match = re.search(r"(高级产品经理|产品经理|项目经理|产品运营|运营经理|销售经理|研发工程师|工程师)", extra_info)
-    if match:
-        return match.group(1)
 
-    candidate_id = _clean_text(candidate.get("candidate_id"))
-    segments = [segment for segment in re.split(r"[_\-\s]+", candidate_id) if segment]
-    role_keywords = ("产品经理", "高级产品经理", "项目经理", "运营", "工程师", "销售", "顾问")
-    for segment in segments:
-        if any(keyword in segment for keyword in role_keywords):
+def _is_hash_like(token: str) -> bool:
+    text = _clean_text(token)
+    return bool(text) and bool(re.fullmatch(r"[0-9a-f]{8,}", text, flags=re.IGNORECASE))
+
+
+def _is_salary_token(token: str) -> bool:
+    text = _clean_text(token)
+    if not text:
+        return False
+    return bool(re.fullmatch(r"\d{1,2}\s*[kK]", text)) or bool(re.fullmatch(r"\d{1,2}\s*-\s*\d{1,2}\s*[kK]", text))
+
+
+def _is_experience_token(token: str) -> bool:
+    text = _clean_text(token)
+    if not text:
+        return False
+    return bool(re.fullmatch(r"\d+\s*年", text)) or text in {"1年以内", "应届", "在读"}
+
+
+def _is_location_like(token: str) -> bool:
+    text = _clean_text(token)
+    if not text:
+        return False
+    if text in LOCATION_KEYWORDS:
+        return True
+    return any(city in text for city in LOCATION_KEYWORDS) and bool(re.search(r"\d", text))
+
+
+def _looks_like_role(token: str) -> bool:
+    text = _clean_text(token)
+    if not text:
+        return False
+    return any(keyword in text for keyword in ROLE_KEYWORDS)
+
+
+def _looks_like_composite_name(value: Any) -> bool:
+    text = _clean_text(value)
+    if not text:
+        return False
+    if len(_split_identifier_tokens(text)) >= 3:
+        composite_signals = [
+            bool(re.search(r"\d", text)),
+            any(keyword in text for keyword in ROLE_KEYWORDS),
+            any(city in text for city in LOCATION_KEYWORDS),
+            "K" in text.upper(),
+            "年" in text,
+            "【" in text or "】" in text,
+        ]
+        if sum(1 for signal in composite_signals if signal) >= 2:
+            return True
+    return False
+
+
+def _looks_like_person_name(token: str) -> bool:
+    text = _clean_text(token)
+    if not text:
+        return False
+    if text.lower() in NAME_STOPWORDS:
+        return False
+    if _looks_like_role(text) or _is_salary_token(text) or _is_experience_token(text) or _is_location_like(text):
+        return False
+    if _is_hash_like(text) or bool(re.search(r"\d", text)):
+        return False
+    if len(text) > 20:
+        return False
+    if re.fullmatch(r"[\u4e00-\u9fff]{2,6}", text):
+        return True
+    if re.fullmatch(r"[A-Za-z][A-Za-z .'-]{1,29}", text):
+        return True
+    return False
+
+
+def _find_name_in_identifier(identifier: Any) -> str:
+    tokens = _split_identifier_tokens(_clean_text(identifier))
+    if not tokens:
+        return ""
+
+    for token in reversed(tokens):
+        if _looks_like_person_name(token):
+            return token
+
+    chinese_segments = re.findall(r"[\u4e00-\u9fff]{2,6}", _clean_text(identifier))
+    for segment in reversed(chinese_segments):
+        if _looks_like_person_name(segment):
             return segment
 
     return ""
 
 
-def _extract_candidate_name(candidate: Dict[str, Any]) -> str:
-    for key in ("candidate_name", "name"):
+def _iter_name_candidates(candidate: Dict[str, Any]) -> List[str]:
+    values: List[str] = []
+    for key in ("resume_name", "parsed_name", "real_name", "full_name", "name", "candidate_name"):
         value = _clean_text(candidate.get(key))
         if value:
+            values.append(value)
+
+    for nested_key in ("basic_info", "profile", "resume_info"):
+        nested = candidate.get(nested_key)
+        if isinstance(nested, dict):
+            for key in ("resume_name", "parsed_name", "real_name", "full_name", "name", "candidate_name"):
+                value = _clean_text(nested.get(key))
+                if value:
+                    values.append(value)
+
+    return values
+
+
+def _pick_best_name(*candidates: str) -> str:
+    clean_candidates: List[str] = []
+    for value in candidates:
+        text = _clean_text(value)
+        if not text:
+            continue
+        clean_candidates.append(text)
+
+    for value in clean_candidates:
+        if _looks_like_person_name(value):
             return value
 
-    candidate_id = _clean_text(candidate.get("candidate_id"))
-    chinese_segments = re.findall(r"[\u4e00-\u9fff]{2,4}", candidate_id)
-    for segment in chinese_segments:
-        if segment.endswith(("经理", "总监", "顾问", "工程师", "专员")):
-            continue
-        if segment in {"本周", "今天", "联系", "可选"}:
-            continue
-        return segment
+    for value in clean_candidates:
+        if not _looks_like_composite_name(value):
+            extracted = _find_name_in_identifier(value)
+            if extracted:
+                return extracted
+            if _looks_like_person_name(value):
+                return value
 
-    return candidate_id
+    for value in clean_candidates:
+        extracted = _find_name_in_identifier(value)
+        if extracted:
+            return extracted
+
+    return clean_candidates[0] if clean_candidates else ""
+
+
+def _extract_candidate_name(candidate: Dict[str, Any], source_candidate: Optional[Dict[str, Any]] = None) -> str:
+    source_candidate = source_candidate or {}
+
+    source_names = _iter_name_candidates(source_candidate)
+    model_names = _iter_name_candidates(candidate)
+
+    identifier_candidates = [
+        _clean_text(source_candidate.get("candidate_id")),
+        _clean_text(source_candidate.get("id")),
+        _clean_text(candidate.get("candidate_id")),
+        _clean_text(candidate.get("id")),
+    ]
+
+    return _pick_best_name(*(source_names + model_names + identifier_candidates))
+
+
+def _extract_role_label(candidate: Dict[str, Any], source_candidate: Optional[Dict[str, Any]] = None) -> str:
+    for current in (candidate, source_candidate or {}):
+        for key in ("role_label", "job_title", "title"):
+            value = _clean_text(current.get(key))
+            if value:
+                return value
+
+        extra_info = _clean_text(current.get("extra_info"))
+        match = re.search(r"(高级产品经理|产品经理|项目经理|产品专员|产品运营|运营经理|销售经理|研发工程师|工程师)", extra_info)
+        if match:
+            return match.group(1)
+
+        identifier = _clean_text(current.get("candidate_id")) or _clean_text(current.get("id"))
+        for token in _split_identifier_tokens(identifier):
+            if _looks_like_role(token):
+                return token
+
+    return ""
+
+
+def _extract_experience_label(candidate: Dict[str, Any], source_candidate: Optional[Dict[str, Any]] = None) -> str:
+    for current in (candidate, source_candidate or {}):
+        for key in ("experience_label", "years_of_experience", "work_years"):
+            value = _clean_text(current.get(key))
+            if value:
+                return value
+
+        extra_info = _clean_text(current.get("extra_info"))
+        match = re.search(r"(\d+\s*年|1年以内|应届)", extra_info)
+        if match:
+            return match.group(1)
+
+        identifier = _clean_text(current.get("candidate_id")) or _clean_text(current.get("id"))
+        match = re.search(r"(\d+\s*年|1年以内|应届)", identifier)
+        if match:
+            return match.group(1)
+
+    return ""
 
 
 def _fallback_reasons(candidate: Dict[str, Any]) -> List[str]:
     decision = candidate.get("decision", "maybe")
     priority = candidate.get("priority", "C")
+    role_label = _extract_role_label(candidate)
+    experience_label = _extract_experience_label(candidate)
+
+    if "项目经理" in role_label:
+        return [
+            "具备项目推进和跨团队协同经验，需要进一步核实与产品岗位的职责重合度",
+            "简历中呈现出一定需求沟通与落地推动能力，具备首轮沟通价值",
+            "适合作为相关方向候选人，重点验证产品设计 ownership 与业务理解深度",
+        ]
 
     if decision in {"strong_yes", "yes"} or priority == "A":
         return [
-            "简历呈现出与目标岗位较高的相关性，具备优先沟通价值",
-            "履历中存在可映射到岗位要求的经验信号，值得进入首轮验证",
-            "从背景完整度和匹配度看，具备进一步转化为有效候选人的可能"
+            f"具备与目标岗位较高相关度的{role_label or '产品'}经验，适合优先进入首轮沟通",
+            f"履历中存在可映射到岗位要求的经验信号，{experience_label or '经验成熟度'}具备一定竞争力",
+            "从背景完整度和匹配度看，具备进一步转化为有效候选人的可能",
         ]
 
     return [
         "简历中存在部分可迁移经验，具备基础沟通价值",
-        "虽然不是强匹配人选，但仍有若干点值得通过电话进一步确认",
-        "当前信息显示其具备一定潜力，可作为补充候选进入比较池"
+        "当前信息显示其具备一定潜力，但关键能力仍需通过电话进一步核实",
+        "更适合作为补充候选进入比较池，避免过早给出过强判断",
     ]
 
 
 def _fallback_risks(candidate: Dict[str, Any]) -> List[str]:
+    role_label = _extract_role_label(candidate)
+    experience_label = _extract_experience_label(candidate)
+
+    if "项目经理" in role_label:
+        return ["项目推进经验较强，但产品设计与功能定义的直接 ownership 需要首轮重点验证"]
+
+    if experience_label in {"1年以内", "应届"} or experience_label.startswith("1年") or experience_label.startswith("2年"):
+        return ["年限相对偏短，独立负责复杂需求和跨团队推动的深度需要进一步确认"]
+
+    return ["简历偏结果摘要，真实职责边界和个人贡献比例需要在首轮沟通中进一步验证"]
+
+
+def _build_personalized_hook_message(candidate: Dict[str, Any]) -> str:
+    role_label = _extract_role_label(candidate)
+    experience_label = _extract_experience_label(candidate)
+    priority = _clean_text(candidate.get("priority"))
+    decision = _clean_text(candidate.get("decision"))
+
+    if "项目经理" in role_label:
+        return "您好，看到您有项目推进和跨团队协同经验，我们这边有一个更偏产品落地与流程设计的岗位，想先和您沟通一下匹配度。"
+
+    if "高级产品经理" in role_label:
+        return "您好，看到您有较完整的高级产品/复杂业务产品经历，我们这边在看一个偏B端和跨团队推进的岗位，想和您进一步聊聊。"
+
+    if experience_label in {"1年以内", "应届"} or experience_label.startswith("1年") or experience_label.startswith("2年"):
+        return "您好，看到您已有一定产品相关经历，我们这边有一个会比较看重需求分析和成长速度的岗位，想先了解一下您的实际负责深度。"
+
+    if priority == "A" or decision in {"strong_yes", "yes"}:
+        return "您好，看到您过往经历里有几个点和我们当前岗位比较贴合，不是群发沟通，想优先和您确认一下匹配度。"
+
+    return "您好，看到您有产品相关背景，我们这边有一个方向接近的岗位，想先和您快速了解一下实际项目经历。"
+
+
+def _build_personalized_verification_question(candidate: Dict[str, Any]) -> str:
+    role_label = _extract_role_label(candidate)
+    experience_label = _extract_experience_label(candidate)
+
+    if "项目经理" in role_label:
+        return "您过往最有代表性的项目里，哪些需求定义、方案取舍和落地动作是您亲自负责推动的？"
+
+    if "高级产品经理" in role_label:
+        return "您最近一段最能体现产品判断和复杂业务拆解能力的项目，具体是怎么推进落地的？"
+
+    if experience_label in {"1年以内", "应届"} or experience_label.startswith("1年") or experience_label.startswith("2年"):
+        return "在您最近一段项目经历里，哪些需求分析、原型或推动落地的环节是您独立负责的？"
+
+    return "您最近最有代表性的项目里，真正由您亲自负责并推动结果落地的部分是什么？"
+
+
+def _build_personalized_deep_questions(candidate: Dict[str, Any]) -> List[str]:
+    role_label = _extract_role_label(candidate)
+
+    if "项目经理" in role_label:
+        return [
+            "如果把您最近的代表项目拆开看，哪些需求定义和方案判断是您而不是研发或客户主导的？",
+            "您过去做项目推进时，遇到需求冲突或优先级拉扯，通常如何取舍并推动共识？",
+            "如果转到更偏产品的岗位，您认为自己最能迁移过来的能力是什么？",
+        ]
+
+    if "高级产品经理" in role_label:
+        return [
+            "您最近一段最复杂的B端场景里，是如何完成需求拆解、优先级取舍和方案落地的？",
+            "当业务目标、研发资源和上线节奏发生冲突时，您通常如何做产品判断？",
+            "您过去哪些经历最能证明自己不仅能写需求，还能推动跨团队协作与结果转化？",
+        ]
+
     return [
-        "简历偏结果摘要，真实职责边界和个人贡献比例需要在首轮沟通中进一步验证"
+        "您最近一段最有代表性的项目里，真正由您亲自负责并产生结果的部分是什么？",
+        "如果只选一个最能证明您能力的案例，您会讲哪一个？结果是怎么做出来的？",
+        "这个岗位比较看重业务理解和落地推进，您过去有哪些经历能直接证明这一点？",
     ]
 
 
-def _fallback_deep_questions(candidate: Dict[str, Any]) -> List[str]:
-    return [
-        "你最近一段最有代表性的项目里，真正由你亲自负责并产生结果的部分是什么？",
-        "如果只选一个最能证明你能力的案例，你会讲哪一个？结果是怎么做出来的？",
-        "这个岗位很看重落地和转化，你过去有哪些经历能直接证明你具备这种能力？"
-    ]
+def _is_generic_hook_message(message: str) -> bool:
+    text = _clean_text(message)
+    if not text:
+        return True
+    generic_patterns = (
+        "看到您有产品经理经验",
+        "想和您聊聊一个高级产品经理的机会",
+        "看到您有产品经理相关经验",
+        "想和您聊聊一个",
+    )
+    return any(pattern in text for pattern in generic_patterns)
+
+
+def _is_generic_verification_question(question: str) -> bool:
+    text = _clean_text(question)
+    if not text:
+        return True
+    generic_patterns = (
+        "最近最有代表性的项目是什么",
+        "最能证明你真实能力的项目",
+    )
+    return any(pattern in text for pattern in generic_patterns)
+
+
+def _is_generic_deep_questions(questions: List[str]) -> bool:
+    if len(questions) < 3:
+        return True
+    joined = " ".join(_clean_text(question) for question in questions)
+    generic_patterns = (
+        "您最有成就感的项目是什么",
+        "您对B端产品设计的理解是什么",
+        "真正由你亲自负责并产生结果的部分是什么",
+    )
+    return sum(1 for pattern in generic_patterns if pattern in joined) >= 2
 
 
 def _build_fallback_message_template(candidate: Dict[str, Any], action: Dict[str, Any]) -> str:
@@ -155,48 +469,52 @@ def _build_fallback_message_template(candidate: Dict[str, Any], action: Dict[str
     core_judgement = _clean_text(candidate.get("core_judgement"))
 
     if not verification_question:
-        verification_question = "你最近一段最能代表你真实能力的项目，具体是怎么做成的？"
+        verification_question = _build_personalized_verification_question(candidate)
 
     if "高级产品经理" in role_label:
         return (
-            f"你好，看到你有较完整的{role_label}经历，我们这边正在看一个更偏复杂业务流程和跨团队推进的岗位。"
-            f"你的背景里有几个点和岗位要求比较贴，我想先和你确认一下，你最近一段最能代表你产品判断和落地能力的项目是什么？"
+            f"您好，{candidate_name or '这边'}。看到您有较完整的{role_label}经历，我们正在招聘一个偏B端与复杂业务流程推进的岗位。"
+            f"您的背景里有几个点和岗位要求比较贴，所以想优先和您确认一下：{verification_question}"
         )
 
     if "项目经理" in role_label:
         return (
-            f"你好，看到你在项目推进和跨团队协同上有比较扎实的经验，我们这边有一个对流程设计和落地推动要求比较高的岗位，和你的背景有一定契合。"
-            f"我想先确认一下，你过去最有代表性的复杂项目里，你亲自推动落地的关键动作是什么？"
+            f"您好，{candidate_name or '这边'}。看到您在项目推进和跨团队协同上有比较扎实的经验，我们这边有一个更偏产品落地与流程设计的岗位。"
+            f"如果您方便，我想先确认一下：{verification_question}"
         )
 
     if total_score < 75:
         return (
-            f"你好，看到你已经有一定{role_label or '相关'}经验，我们这边有一个对执行和成长速度都比较看重的岗位。"
-            f"想先和你确认一下，在你最近一段项目经历里，哪些部分是你独立负责并真正推动结果落地的？"
+            f"您好，{candidate_name or '这边'}。看到您已经有一定{role_label or '相关'}经验，我们这边有一个会比较看重需求分析、执行力和成长速度的岗位。"
+            f"想先和您确认一下，在您最近一段项目经历里，哪些部分是您独立负责并真正推动结果落地的？"
         )
 
     if hook:
         return (
             f"{hook}\n\n"
-            f"我这边正在看一个与你经历方向比较接近的机会，"
-            f"不是群发沟通，主要是你的背景里有几个点让我觉得值得优先确认。"
-            f"如果你方便，我想先快速和你确认一个问题：{verification_question}"
+            "我这边正在看一个与你经历方向比较接近的机会，不是群发沟通，主要是你的背景里有几个点让我觉得值得优先确认。"
+            f"如果您方便，我想先快速和您确认一个问题：{verification_question}"
         )
 
-    if candidate_name:
-        return (
-            f"你好，{candidate_name}。我最近在看一个与你背景方向比较接近的岗位。"
-            "从你的履历信号看，有几个点和岗位需求有一定匹配度，"
-            "所以想优先和你确认一下是否值得进一步沟通。"
-            f"{core_judgement + '。' if core_judgement else ''}"
-            f"我最想先确认的问题是：{verification_question}"
-        )
-
+    judgement_part = f"{core_judgement} " if core_judgement else ""
     return (
-        "你好，我这边在看一个与你经历方向有一定匹配度的岗位。"
-        "不确定你最近是否在主动看机会，但你的背景里有几个点值得优先聊一下。"
-        f"如果你方便，我想先确认一个关键问题：{verification_question}"
+        f"您好，{candidate_name or '这边'}。我最近在看一个与您背景方向比较接近的岗位。"
+        f"{judgement_part}从您的履历信号看，有几个点和岗位需求有一定匹配度，所以想优先确认是否值得进一步沟通。"
+        f"我最想先确认的问题是：{verification_question}"
     )
+
+
+def _is_generic_message_template(message: str) -> bool:
+    text = _clean_text(message)
+    if not text:
+        return True
+    generic_patterns = (
+        "看到您有产品经理相关经验",
+        "岗位要求与您的背景匹配",
+        "看到您有产品经理经验",
+        "想和您聊聊一个高级产品经理的机会",
+    )
+    return any(pattern in text for pattern in generic_patterns)
 
 
 def _normalize_score_breakdown(score_breakdown: Any, total_score: float) -> Dict[str, float]:
@@ -210,6 +528,59 @@ def _normalize_score_breakdown(score_breakdown: Any, total_score: float) -> Dict
     return normalized
 
 
+def _build_core_judgement(candidate: Dict[str, Any]) -> str:
+    candidate_name = _extract_candidate_name(candidate)
+    role_label = _extract_role_label(candidate)
+    priority = _clean_text(candidate.get("priority"))
+    decision = _clean_text(candidate.get("decision"))
+    score = int(_clamp_score(candidate.get("total_score"), 0))
+
+    if "项目经理" in role_label:
+        if decision in {"strong_yes", "yes"}:
+            return f"{candidate_name or '该候选人'}具备项目推进与跨团队协同经验，适合进入首轮沟通，重点核实产品设计与需求定义的直接职责深度。"
+        return f"{candidate_name or '该候选人'}与目标岗位存在一定相关性，可作为备选，建议优先确认产品职责重合度。"
+
+    if priority == "A":
+        return f"{candidate_name or '该候选人'}与目标岗位匹配度较高，综合评分{score}分，建议优先联系。"
+
+    if decision in {"strong_yes", "yes"}:
+        return f"{candidate_name or '该候选人'}具备较明确的相关经验信号，综合评分{score}分，建议安排首轮沟通。"
+
+    return f"{candidate_name or '该候选人'}具备一定匹配度，综合评分{score}分，可作为备选进一步核实。"
+
+
+def _clean_core_judgement(candidate: Dict[str, Any], source_candidate: Optional[Dict[str, Any]] = None) -> str:
+    text = _clean_text(candidate.get("core_judgement"))
+    candidate_name = _extract_candidate_name(candidate, source_candidate)
+    replacement_candidates = []
+
+    if source_candidate:
+        replacement_candidates.extend(_iter_name_candidates(source_candidate))
+        replacement_candidates.append(_clean_text(source_candidate.get("candidate_id")))
+        replacement_candidates.append(_clean_text(source_candidate.get("id")))
+
+    replacement_candidates.extend(_iter_name_candidates(candidate))
+    replacement_candidates.append(_clean_text(candidate.get("candidate_id")))
+    replacement_candidates.append(_clean_text(candidate.get("id")))
+
+    cleaned = text
+    for value in replacement_candidates:
+        current = _clean_text(value)
+        if not current or current == candidate_name:
+            continue
+        if _looks_like_composite_name(current) or _is_hash_like(current):
+            cleaned = cleaned.replace(current, candidate_name)
+
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if not cleaned or _looks_like_composite_name(cleaned.split("，", 1)[0]):
+        temp_candidate = dict(candidate)
+        if candidate_name:
+            temp_candidate["candidate_name"] = candidate_name
+            temp_candidate["name"] = candidate_name
+        return _build_core_judgement(temp_candidate)
+    return cleaned
+
+
 def _normalize_action(candidate: Dict[str, Any], action: Any) -> Dict[str, Any]:
     if not isinstance(action, dict):
         action = {}
@@ -221,26 +592,25 @@ def _normalize_action(candidate: Dict[str, Any], action: Any) -> Dict[str, Any]:
         should_contact = decision in {"strong_yes", "yes"}
 
     hook_message = _clean_text(action.get("hook_message"))
-    if not hook_message:
-        hook_message = "我在看一个岗位时注意到你的背景里有几个点比较贴，这不是群发，我想先和你确认一个关键判断。"
+    if _is_generic_hook_message(hook_message):
+        hook_message = _build_personalized_hook_message(candidate)
 
     verification_question = _clean_text(action.get("verification_question"))
-    if not verification_question:
-        verification_question = "你最近一段最能证明你真实能力的项目，具体是怎么做成的？"
+    if _is_generic_verification_question(verification_question):
+        verification_question = _build_personalized_verification_question(candidate)
 
     deep_questions = _clean_str_list(action.get("deep_questions"))
-    if len(deep_questions) < 3:
-        fallback = _fallback_deep_questions(candidate)
-        deep_questions = (deep_questions + fallback)[:3]
+    if _is_generic_deep_questions(deep_questions):
+        deep_questions = _build_personalized_deep_questions(candidate)
 
     message_template = _clean_text(action.get("message_template"))
-    if not message_template:
+    if _is_generic_message_template(message_template):
         message_template = _build_fallback_message_template(
             candidate,
             {
                 "hook_message": hook_message,
-                "verification_question": verification_question
-            }
+                "verification_question": verification_question,
+            },
         )
 
     return {
@@ -248,7 +618,7 @@ def _normalize_action(candidate: Dict[str, Any], action: Any) -> Dict[str, Any]:
         "hook_message": hook_message,
         "verification_question": verification_question,
         "message_template": message_template,
-        "deep_questions": deep_questions
+        "deep_questions": deep_questions[:3],
     }
 
 
@@ -285,8 +655,8 @@ def validate_output(output_text: str) -> Dict[str, Any]:
     """
     try:
         data = json.loads(output_text)
-    except Exception as e:
-        raise ValueError(f"❌ Invalid JSON output: {e}")
+    except Exception as exc:
+        raise ValueError(f"❌ Invalid JSON output: {exc}")
 
     if not isinstance(data, dict):
         raise ValueError("❌ Output must be a JSON object")
@@ -300,9 +670,9 @@ def validate_output(output_text: str) -> Dict[str, Any]:
     if not isinstance(data["top_recommendations"], list):
         raise ValueError("❌ top_recommendations must be list")
 
-    for i, c in enumerate(data["top_recommendations"]):
-        if not isinstance(c, dict):
-            raise ValueError(f"❌ recommendation[{i}] must be object")
+    for index, candidate in enumerate(data["top_recommendations"]):
+        if not isinstance(candidate, dict):
+            raise ValueError(f"❌ recommendation[{index}] must be object")
 
         required_fields = [
             "candidate_id",
@@ -311,14 +681,14 @@ def validate_output(output_text: str) -> Dict[str, Any]:
             "decision",
             "priority",
             "action_timing",
-            "core_judgement"
+            "core_judgement",
         ]
         for field in required_fields:
-            if field not in c:
-                raise ValueError(f"❌ recommendation[{i}] missing {field}")
+            if field not in candidate:
+                raise ValueError(f"❌ recommendation[{index}] missing {field}")
 
-        if "action" in c and not isinstance(c["action"], dict):
-            raise ValueError(f"❌ recommendation[{i}].action must be object")
+        if "action" in candidate and not isinstance(candidate["action"], dict):
+            raise ValueError(f"❌ recommendation[{index}].action must be object")
 
     return data
 
@@ -330,56 +700,79 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
     """
     修正模型可能的输出问题，让系统稳定运行。
     核心原则：
-    1. 不用空字符串伪造"合格数组"
+    1. 不用空字符串伪造“合格数组”
     2. message_template 必须永远可发
     3. rank 最终必须连续
     """
     data["overall_diagnosis"] = _clean_text(data.get("overall_diagnosis"))
     data.setdefault("batch_advice", "")
     data["batch_advice"] = _clean_text(data.get("batch_advice"))
-    candidate_lookup = _build_candidate_lookup(input_data or {})
 
+    candidate_lookup = _build_candidate_lookup(input_data or {})
     recommendations = data.get("top_recommendations", [])
     sanitized: List[Dict[str, Any]] = []
 
-    for idx, c in enumerate(recommendations, 1):
-        if not isinstance(c, dict):
-            c = {}
+    for index, candidate in enumerate(recommendations, 1):
+        if not isinstance(candidate, dict):
+            candidate = {}
 
-        candidate_id = _clean_text(c.get("candidate_id")) or f"unknown_{idx}"
+        candidate_id = _clean_text(candidate.get("candidate_id")) or f"unknown_{index}"
+        source_candidate = candidate_lookup.get(candidate_id, {})
 
-        total_score = _clamp_score(c.get("total_score"), default=0)
+        total_score = _clamp_score(candidate.get("total_score"), default=0)
 
-        decision = c.get("decision")
+        decision = candidate.get("decision")
         if decision not in VALID_DECISIONS:
             decision = "maybe"
 
-        priority = c.get("priority")
+        priority = candidate.get("priority")
         if priority not in VALID_PRIORITIES:
             priority = "C"
 
-        action_timing = c.get("action_timing")
+        action_timing = candidate.get("action_timing")
         if action_timing not in VALID_TIMINGS:
             action_timing = "optional"
 
-        core_judgement = _clean_text(c.get("core_judgement"))
-        source_candidate = candidate_lookup.get(candidate_id, {})
-        candidate_name = _clean_text(c.get("candidate_name")) or _clean_text(source_candidate.get("name"))
-        role_label = _extract_role_label(c) or _extract_role_label(source_candidate)
+        candidate_name = _extract_candidate_name(candidate, source_candidate)
+        role_label = _extract_role_label(candidate, source_candidate)
+        core_judgement = _clean_core_judgement(
+            {
+                **candidate,
+                "candidate_name": candidate_name,
+                "name": candidate_name,
+                "role_label": role_label,
+                "total_score": total_score,
+                "decision": decision,
+                "priority": priority,
+            },
+            source_candidate,
+        )
 
-        reasons = _clean_str_list(c.get("reasons"))
+        reasons = _clean_str_list(candidate.get("reasons"))
         if len(reasons) < 3:
-            reasons = (reasons + _fallback_reasons(c))[:3]
+            reasons = (reasons + _fallback_reasons({
+                **candidate,
+                "candidate_name": candidate_name,
+                "name": candidate_name,
+                "role_label": role_label,
+                "decision": decision,
+                "priority": priority,
+            }))[:3]
 
-        risks = _clean_risk_list(c.get("risks"))
+        risks = _clean_risk_list(candidate.get("risks"))
         if len(risks) < 1:
-            risks = _fallback_risks(c)
+            risks = _fallback_risks({
+                **candidate,
+                "candidate_name": candidate_name,
+                "name": candidate_name,
+                "role_label": role_label,
+            })
 
-        score_breakdown = _normalize_score_breakdown(c.get("score_breakdown"), total_score)
+        score_breakdown = _normalize_score_breakdown(candidate.get("score_breakdown"), total_score)
 
         normalized_candidate = {
             "candidate_id": candidate_id,
-            "rank": c.get("rank"),
+            "rank": candidate.get("rank"),
             "candidate_name": candidate_name,
             "name": candidate_name,
             "role_label": role_label,
@@ -390,14 +783,9 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
             "core_judgement": core_judgement,
             "reasons": reasons,
             "risks": risks,
-            "score_breakdown": score_breakdown
+            "score_breakdown": score_breakdown,
         }
-
-        normalized_candidate["action"] = _normalize_action(
-            normalized_candidate,
-            c.get("action")
-        )
-
+        normalized_candidate["action"] = _normalize_action(normalized_candidate, candidate.get("action"))
         sanitized.append(normalized_candidate)
 
     data["top_recommendations"] = _sort_recommendations(sanitized)
@@ -412,11 +800,11 @@ def log_decision(input_data: Dict[str, Any], output_data: Dict[str, Any]):
         "timestamp": datetime.utcnow().isoformat(),
         "input": input_data,
         "output": output_data,
-        "feedback": None
+        "feedback": None,
     }
 
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    with open(LOG_FILE, "a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 # ==============================
@@ -437,31 +825,31 @@ def evaluate_output_quality(data: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "quality_score": 0,
             "issue": "no_candidates",
-            "quality_flag": "invalid"
+            "quality_flag": "invalid",
         }
 
-    scores = [c.get("total_score", 0) for c in candidates if _is_number(c.get("total_score", 0))]
+    scores = [candidate.get("total_score", 0) for candidate in candidates if _is_number(candidate.get("total_score", 0))]
     if not scores:
         return {
             "quality_score": 0,
             "issue": "no_valid_scores",
-            "quality_flag": "invalid"
+            "quality_flag": "invalid",
         }
 
     avg_score = sum(scores) / len(scores)
     variance = max(scores) - min(scores)
 
-    has_a = any(c.get("priority") == "A" for c in candidates)
-    contact_ratio = sum(
-        1 for c in candidates if c.get("action", {}).get("should_contact")
-    ) / len(candidates)
+    has_a = any(candidate.get("priority") == "A" for candidate in candidates)
+    contact_ratio = sum(1 for candidate in candidates if candidate.get("action", {}).get("should_contact")) / len(candidates)
 
     fallback_message_count = 0
-    for c in candidates:
-        msg = _clean_text(c.get("action", {}).get("message_template"))
-        if msg.startswith("你好，我这边在看一个与你经历方向有一定匹配度的岗位") or \
-           msg.startswith("你好，我最近在看一个与你背景方向比较接近的岗位") or \
-           msg.startswith("我在看一个岗位时注意到你的背景里有几个点比较贴"):
+    for candidate in candidates:
+        message = _clean_text(candidate.get("action", {}).get("message_template"))
+        if (
+            "与你背景方向比较接近的岗位" in message
+            or "成长速度都比较看重的岗位" in message
+            or "更偏产品落地与流程设计的岗位" in message
+        ):
             fallback_message_count += 1
 
     fallback_message_ratio = fallback_message_count / len(candidates)
@@ -498,7 +886,7 @@ def evaluate_output_quality(data: Dict[str, Any]) -> Dict[str, Any]:
         "contact_ratio": round(contact_ratio, 2),
         "fallback_message_ratio": round(fallback_message_ratio, 2),
         "quality_flag": quality_flag,
-        "issue": issue
+        "issue": issue,
     }
 
 
@@ -506,7 +894,7 @@ def evaluate_output_quality(data: Dict[str, Any]) -> Dict[str, Any]:
 # 5. Markdown 渲染（给飞书/人看）
 # ==============================
 def render_human_readable(data: Dict[str, Any]) -> str:
-    lines = []
+    lines: List[str] = []
 
     if data.get("overall_diagnosis"):
         lines.append("## 📋 整体诊断\n")
@@ -525,60 +913,62 @@ def render_human_readable(data: Dict[str, Any]) -> str:
     priority_map = {
         "A": "🔥 必须今天联系",
         "B": "👍 本周联系",
-        "C": "👌 备选"
+        "C": "👌 备选",
     }
-
     decision_map = {
         "strong_yes": "💚 强烈推荐",
         "yes": "✅ 建议联系",
         "maybe": "⏸️ 观察",
-        "no": "❌ 不推荐"
+        "no": "❌ 不推荐",
     }
-
     timing_map = {
         "today": "⚡ 今天",
         "this_week": "📅 本周",
-        "optional": "🔖 可选"
+        "optional": "🔖 可选",
     }
 
-    for c in recommendations:
+    for candidate in recommendations:
+        candidate_name = _extract_candidate_name(candidate) or candidate.get("candidate_id", "")
+        role_label = _extract_role_label(candidate)
+        heading = candidate_name if not role_label else f"{candidate_name}｜{role_label}"
+
         lines.append(
-            f"\n### Rank #{c.get('rank', '-')} | "
-            f"{priority_map.get(c.get('priority'), '')} - {c.get('candidate_id', '')}"
+            f"\n### Rank #{candidate.get('rank', '-')} | "
+            f"{priority_map.get(candidate.get('priority'), '')} - {heading}"
         )
         lines.append(
-            f"**得分**: {c.get('total_score', 0)} | "
-            f"**决策**: {decision_map.get(c.get('decision'))} | "
-            f"**时机**: {timing_map.get(c.get('action_timing'))}\n"
+            f"**得分**: {candidate.get('total_score', 0)} | "
+            f"**决策**: {decision_map.get(candidate.get('decision'))} | "
+            f"**时机**: {timing_map.get(candidate.get('action_timing'))}\n"
         )
 
-        if c.get("core_judgement"):
-            lines.append(f"**🎯 核心判断**: {c['core_judgement']}\n")
+        if candidate.get("core_judgement"):
+            lines.append(f"**🎯 核心判断**: {candidate['core_judgement']}\n")
 
-        sb = c.get("score_breakdown", {})
-        if sb:
+        score_breakdown = candidate.get("score_breakdown", {})
+        if score_breakdown:
             lines.append(
                 f"**📊 评分拆解**: "
-                f"硬技能 {sb.get('hard_skill', 0)} / "
-                f"经验 {sb.get('experience', 0)} / "
-                f"稳定性 {sb.get('stability', 0)} / "
-                f"潜力 {sb.get('potential', 0)} / "
-                f"转化率 {sb.get('conversion', 0)}\n"
+                f"硬技能 {score_breakdown.get('hard_skill', 0)} / "
+                f"经验 {score_breakdown.get('experience', 0)} / "
+                f"稳定性 {score_breakdown.get('stability', 0)} / "
+                f"潜力 {score_breakdown.get('potential', 0)} / "
+                f"转化率 {score_breakdown.get('conversion', 0)}\n"
             )
 
-        if c.get("reasons"):
+        if candidate.get("reasons"):
             lines.append("**✨ 优势**:")
-            for r in c["reasons"][:3]:
-                lines.append(f"- {r}")
+            for reason in candidate["reasons"][:3]:
+                lines.append(f"- {reason}")
             lines.append("")
 
-        if c.get("risks"):
+        if candidate.get("risks"):
             lines.append("**⚠️ 风险**:")
-            for r in c["risks"][:3]:
-                lines.append(f"- {r}")
+            for risk in candidate["risks"][:3]:
+                lines.append(f"- {risk}")
             lines.append("")
 
-        action = c.get("action", {})
+        action = candidate.get("action", {})
 
         if action.get("hook_message"):
             lines.append("**🪝 钩子话术**:")
@@ -599,8 +989,8 @@ def render_human_readable(data: Dict[str, Any]) -> str:
 
         if action.get("deep_questions"):
             lines.append("**🔍 深问问题**:")
-            for q in action["deep_questions"][:3]:
-                lines.append(f"- {q}")
+            for question in action["deep_questions"][:3]:
+                lines.append(f"- {question}")
             lines.append("")
 
         lines.append("---")
@@ -631,5 +1021,5 @@ def run(input_data: dict, output_text: str):
     return {
         "json": output_data,
         "display": human_readable,
-        "meta": quality
+        "meta": quality,
     }
