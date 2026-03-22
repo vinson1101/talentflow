@@ -123,11 +123,11 @@ def process_local_folder(
             "overall_diagnosis": runner_result["json"].get("overall_diagnosis", ""),
             "batch_advice": runner_result["json"].get("batch_advice", ""),
         },
-        filename="[final_report.md](final_report.md)",
+        filename="final_report.md",
     )
     owner_summary_path = final_reporter.save_owner_summary(
         runner_result["json"].get("top_recommendations", []),
-        filename="[owner_summary.md](owner_summary.md)",
+        filename="owner_summary.md",
     )
 
     run_metadata = batch_builder.build_run_metadata(

@@ -1,12 +1,15 @@
 import json
+import re
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 LOG_FILE = "feedback_loop.jsonl"
 
 VALID_DECISIONS = {"strong_yes", "yes", "maybe", "no"}
 VALID_PRIORITIES = {"A", "B", "C"}
 VALID_TIMINGS = {"today", "this_week", "optional"}
+PRIORITY_ORDER = {"A": 0, "B": 1, "C": 2}
+TIMING_ORDER = {"today": 0, "this_week": 1, "optional": 2}
 
 
 # ==============================
@@ -37,6 +40,78 @@ def _clean_str_list(values: Any) -> List[str]:
         if s:
             cleaned.append(s)
     return cleaned
+
+
+def _normalize_risk(value: Any) -> str:
+    if isinstance(value, dict):
+        return _clean_text(value.get("description"))
+    return _clean_text(value)
+
+
+def _clean_risk_list(values: Any) -> List[str]:
+    if not isinstance(values, list):
+        return []
+
+    cleaned = []
+    for value in values:
+        risk = _normalize_risk(value)
+        if risk:
+            cleaned.append(risk)
+    return cleaned
+
+
+def _build_candidate_lookup(input_data: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    candidates = input_data.get("candidates", [])
+    if not isinstance(candidates, list):
+        return {}
+
+    lookup: Dict[str, Dict[str, Any]] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        candidate_id = _clean_text(candidate.get("id"))
+        if candidate_id:
+            lookup[candidate_id] = candidate
+    return lookup
+
+
+def _extract_role_label(candidate: Dict[str, Any]) -> str:
+    for key in ("role_label", "job_title", "title"):
+        value = _clean_text(candidate.get(key))
+        if value:
+            return value
+
+    extra_info = _clean_text(candidate.get("extra_info"))
+    match = re.search(r"(高级产品经理|产品经理|项目经理|产品运营|运营经理|销售经理|研发工程师|工程师)", extra_info)
+    if match:
+        return match.group(1)
+
+    candidate_id = _clean_text(candidate.get("candidate_id"))
+    segments = [segment for segment in re.split(r"[_\-\s]+", candidate_id) if segment]
+    role_keywords = ("产品经理", "高级产品经理", "项目经理", "运营", "工程师", "销售", "顾问")
+    for segment in segments:
+        if any(keyword in segment for keyword in role_keywords):
+            return segment
+
+    return ""
+
+
+def _extract_candidate_name(candidate: Dict[str, Any]) -> str:
+    for key in ("candidate_name", "name"):
+        value = _clean_text(candidate.get(key))
+        if value:
+            return value
+
+    candidate_id = _clean_text(candidate.get("candidate_id"))
+    chinese_segments = re.findall(r"[\u4e00-\u9fff]{2,4}", candidate_id)
+    for segment in chinese_segments:
+        if segment.endswith(("经理", "总监", "顾问", "工程师", "专员")):
+            continue
+        if segment in {"本周", "今天", "联系", "可选"}:
+            continue
+        return segment
+
+    return candidate_id
 
 
 def _fallback_reasons(candidate: Dict[str, Any]) -> List[str]:
@@ -74,10 +149,31 @@ def _fallback_deep_questions(candidate: Dict[str, Any]) -> List[str]:
 def _build_fallback_message_template(candidate: Dict[str, Any], action: Dict[str, Any]) -> str:
     hook = _clean_text(action.get("hook_message"))
     verification_question = _clean_text(action.get("verification_question"))
-    candidate_id = _clean_text(candidate.get("candidate_id"))
+    candidate_name = _extract_candidate_name(candidate)
+    role_label = _extract_role_label(candidate)
+    total_score = _clamp_score(candidate.get("total_score"), default=0)
+    core_judgement = _clean_text(candidate.get("core_judgement"))
 
     if not verification_question:
         verification_question = "你最近一段最能代表你真实能力的项目，具体是怎么做成的？"
+
+    if "高级产品经理" in role_label:
+        return (
+            f"你好，看到你有较完整的{role_label}经历，我们这边正在看一个更偏复杂业务流程和跨团队推进的岗位。"
+            f"你的背景里有几个点和岗位要求比较贴，我想先和你确认一下，你最近一段最能代表你产品判断和落地能力的项目是什么？"
+        )
+
+    if "项目经理" in role_label:
+        return (
+            f"你好，看到你在项目推进和跨团队协同上有比较扎实的经验，我们这边有一个对流程设计和落地推动要求比较高的岗位，和你的背景有一定契合。"
+            f"我想先确认一下，你过去最有代表性的复杂项目里，你亲自推动落地的关键动作是什么？"
+        )
+
+    if total_score < 75:
+        return (
+            f"你好，看到你已经有一定{role_label or '相关'}经验，我们这边有一个对执行和成长速度都比较看重的岗位。"
+            f"想先和你确认一下，在你最近一段项目经历里，哪些部分是你独立负责并真正推动结果落地的？"
+        )
 
     if hook:
         return (
@@ -87,11 +183,12 @@ def _build_fallback_message_template(candidate: Dict[str, Any], action: Dict[str
             f"如果你方便，我想先快速和你确认一个问题：{verification_question}"
         )
 
-    if candidate_id:
+    if candidate_name:
         return (
-            "你好，我最近在看一个与你背景方向比较接近的岗位。"
+            f"你好，{candidate_name}。我最近在看一个与你背景方向比较接近的岗位。"
             "从你的履历信号看，有几个点和岗位需求有一定匹配度，"
             "所以想优先和你确认一下是否值得进一步沟通。"
+            f"{core_judgement + '。' if core_judgement else ''}"
             f"我最想先确认的问题是：{verification_question}"
         )
 
@@ -155,6 +252,23 @@ def _normalize_action(candidate: Dict[str, Any], action: Any) -> Dict[str, Any]:
     }
 
 
+def _sort_recommendations(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    sorted_candidates = sorted(
+        candidates,
+        key=lambda c: (
+            PRIORITY_ORDER.get(c.get("priority"), 99),
+            TIMING_ORDER.get(c.get("action_timing"), 99),
+            -_clamp_score(c.get("total_score"), default=0),
+            str(c.get("candidate_id", "")),
+        ),
+    )
+
+    for idx, candidate in enumerate(sorted_candidates, 1):
+        candidate["rank"] = idx
+
+    return sorted_candidates
+
+
 # ==============================
 # 1. JSON 基础验证
 # ==============================
@@ -212,17 +326,18 @@ def validate_output(output_text: str) -> Dict[str, Any]:
 # ==============================
 # 2. 数据清洗与业务兜底
 # ==============================
-def sanitize_output(data: Dict[str, Any]) -> Dict[str, Any]:
+def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     修正模型可能的输出问题，让系统稳定运行。
     核心原则：
-    1. 不用空字符串伪造“合格数组”
+    1. 不用空字符串伪造"合格数组"
     2. message_template 必须永远可发
     3. rank 最终必须连续
     """
     data["overall_diagnosis"] = _clean_text(data.get("overall_diagnosis"))
     data.setdefault("batch_advice", "")
     data["batch_advice"] = _clean_text(data.get("batch_advice"))
+    candidate_lookup = _build_candidate_lookup(input_data or {})
 
     recommendations = data.get("top_recommendations", [])
     sanitized: List[Dict[str, Any]] = []
@@ -248,12 +363,15 @@ def sanitize_output(data: Dict[str, Any]) -> Dict[str, Any]:
             action_timing = "optional"
 
         core_judgement = _clean_text(c.get("core_judgement"))
+        source_candidate = candidate_lookup.get(candidate_id, {})
+        candidate_name = _clean_text(c.get("candidate_name")) or _clean_text(source_candidate.get("name"))
+        role_label = _extract_role_label(c) or _extract_role_label(source_candidate)
 
         reasons = _clean_str_list(c.get("reasons"))
         if len(reasons) < 3:
             reasons = (reasons + _fallback_reasons(c))[:3]
 
-        risks = _clean_str_list(c.get("risks"))
+        risks = _clean_risk_list(c.get("risks"))
         if len(risks) < 1:
             risks = _fallback_risks(c)
 
@@ -262,6 +380,9 @@ def sanitize_output(data: Dict[str, Any]) -> Dict[str, Any]:
         normalized_candidate = {
             "candidate_id": candidate_id,
             "rank": c.get("rank"),
+            "candidate_name": candidate_name,
+            "name": candidate_name,
+            "role_label": role_label,
             "total_score": total_score,
             "decision": decision,
             "priority": priority,
@@ -279,21 +400,7 @@ def sanitize_output(data: Dict[str, Any]) -> Dict[str, Any]:
 
         sanitized.append(normalized_candidate)
 
-    # 先排序，再强制重排连续 rank
-    def _sort_key(item: Dict[str, Any]):
-        raw_rank = item.get("rank")
-        rank_value = raw_rank if _is_number(raw_rank) and raw_rank > 0 else 9999
-        score_value = item.get("total_score", 0)
-        if not _is_number(score_value):
-            score_value = 0
-        return (rank_value, -score_value)
-
-    sanitized.sort(key=_sort_key)
-
-    for idx, c in enumerate(sanitized, 1):
-        c["rank"] = idx
-
-    data["top_recommendations"] = sanitized
+    data["top_recommendations"] = _sort_recommendations(sanitized)
     return data
 
 
@@ -514,7 +621,7 @@ def run(input_data: dict, output_text: str):
     5. 人类可读渲染
     """
     output_data = validate_output(output_text)
-    output_data = sanitize_output(output_data)
+    output_data = sanitize_output(output_data, input_data=input_data)
 
     log_decision(input_data, output_data)
 
