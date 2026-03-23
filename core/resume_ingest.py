@@ -196,8 +196,17 @@ def _build_candidate(
     parse_method: str,
     is_truncated: bool,
 ) -> Dict[str, Any]:
-    candidate_id = f"{file_meta['source_platform']}_{file_meta['file_id']}"
     name, name_source = _extract_name(file_meta["file_name"], raw_resume)
+
+    # 用提取到的真实姓名替换 file_id 中的旧名字（如果有）
+    file_id = file_meta["file_id"]
+    name_in_id = _extract_name_from_file_name(file_id)  # 从 file_id 反向提取原名字段
+    if name_in_id and name_in_id != name:
+        # 替换 file_id 中的旧名字为真实姓名
+        new_file_id = file_id.replace(name_in_id, name, 1)
+        candidate_id = f"{file_meta['source_platform']}_{new_file_id}"
+    else:
+        candidate_id = f"{file_meta['source_platform']}_{file_id}"
 
     source = {
         "platform": file_meta["source_platform"],
@@ -528,7 +537,7 @@ def _extract_standalone_name(raw_resume: str) -> Optional[str]:
     排除包含关键词的行（如公司、职位、学院、日期、邮箱等）。
     """
     lines = raw_resume.splitlines()
-    lines = [l.strip() for l in lines if l.strip()][:20]
+    lines = [l.strip() for l in lines if l.strip()][:40]
 
     REJECT_SUBSTRINGS = (
         "公司", "职位", "岗位", "经理", "工程师", "总监", "部长", "主管",
