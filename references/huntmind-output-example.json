@@ -1,0 +1,102 @@
+{
+  "_description": "HuntMind 标准输出样例（非测试数据）",
+  "_usage": "模型输出前对照此文件对齐结构；审核时对照此文件判断内容质量",
+  "_引用的候选人": "邢威峰（高级产品经理 JD，当前批次 rank=1）",
+
+  "overall_diagnosis": "本批候选人与目标岗位匹配度整体良好，邢威峰与李蓓具备直接上岗条件，建议优先安排面试。",
+
+  "batch_advice": "A类候选人建议3天内联系，B类本周内，C类可观察。",
+
+  "top_recommendations": [
+    {
+      "candidate_id": "local_高级产品经理_杭州11_15K_邢威峰_6年_82e91397f39e",
+
+      "candidate_name": "邢威峰",
+
+      "name": "邢威峰",
+
+      "role_label": "高级产品经理",
+
+      "total_score": 87.1,
+
+      "decision": "strong_yes",
+
+      "priority": "A",
+
+      "action_timing": "today",
+
+      "core_judgement": "邢威峰具备5年互联网产品经验，含互联网医院 CRM、项目管理工具等多类型产品全流程落地，与目标岗位高度匹配，综合评分87分，建议优先联系。",
+
+      "reasons": [
+        "5年产品经理经验，含中大型团队组建和新人培训经历，职责边界完整",
+        "主导互联网医院SaaS产品落地，含医疗器械注册合规经验，与公司方向高度相关",
+        "具备开发基础（Swift/PHP/数据库设计），能有效与研发沟通，降低协作成本"
+      ],
+
+      "risks": [
+        "最近一份工作仅3个月即离职，需在首轮沟通中确认离职原因和身体状况",
+        "期望薪资可能超出当前岗位范围（JD 11-15K），需提前摸底"
+      ],
+
+      "structured_score": {
+        "template_id": "senior_product_complex",
+
+        "dimension_scores": {
+          "hard_skill_match": 92,
+          "experience_depth": 90,
+          "innovation_potential": 82,
+          "execution_goal_breakdown": 88,
+          "team_fit": 78,
+          "willingness": 80,
+          "stability": 72
+        },
+
+        "dimension_evidence": {
+          "hard_skill_match": "5年产品经验，互联网医疗+CRM+项目管理工具多类型覆盖，B端需求分析和产品设计能力与JD must_have 直接对应",
+          "experience_depth": "全流程主导互联网医院SaaS从注册到交付，含跨团队协同和合规推动，深度超过多数同龄候选人",
+          "innovation_potential": "主导首个C端移动端互联网医疗工具医疗器械注册，创新信号明确并有落地成果",
+          "execution_goal_breakdown": "推动多端产品落地（Android/iOS/Web/小程序/支付宝），PRD到上线全链路，有成熟方法论",
+          "team_fit": "有团队组建和新人培训经验，理解各岗位分工，协作意识强",
+          "willingness": "岗位方向匹配度极高，薪资有一定谈判空间，需提前确认预期",
+          "stability": "3年2家，整体稳定，但最近一份工作仅3个月，需确认非健康或信任问题"
+        },
+
+        "weight_snapshot": {
+          "hard_skill_match": 30,
+          "experience_depth": 25,
+          "innovation_potential": 15,
+          "execution_goal_breakdown": 15,
+          "team_fit": 5,
+          "willingness": 5,
+          "stability": 5
+        },
+
+        "weighted_total": 87.1
+      },
+
+      "score_breakdown": {
+        "hard_skill": 92,
+        "experience": 90,
+        "stability": 72,
+        "potential": 85.0,
+        "conversion": 79.4
+      },
+
+      "action": {
+        "should_contact": true,
+
+        "hook_message": "您好邢威峰，看到您有5年互联网产品经验，尤其互联网医院全流程落地这块与我们岗位方向非常契合。想简单和您聊几句看看合作可能性。",
+
+        "verification_question": "您最近一份工作（纳里健康）只做了3个月，主要是什么原因？",
+
+        "message_template": "您好邢威峰，我是某公司HR，我们在找一位高级产品经理，看您的背景在互联网医疗和CRM方向都有完整经验，想和您聊聊。方便的话加我微信细谈。",
+
+        "deep_questions": [
+          "您当时推动互联网医院产品从零到拿医疗器械注册证，整个过程中最难的一个决策是什么？",
+          "您离职纳里健康的原因是什么？现在身体状态如何？",
+          "如果您加入，我们这个岗位前3个月最需要您优先解决的是什么？"
+        ]
+      }
+    }
+  ]
+}
