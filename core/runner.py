@@ -1,7 +1,9 @@
 import ast
 import json
 import re
+import yaml
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 LOG_FILE = "feedback_loop.jsonl"
@@ -889,6 +891,245 @@ def _find_alias_hits(text: str, canonical: str, aliases: List[str]) -> List[str]
     return hits
 
 
+# ==============================
+# 2. 7维评分体系
+# ==============================
+
+# 全局缓存
+_TEMPLATES_CACHE: Optional[Dict[str, Any]] = None
+
+DIMENSIONS_7 = [
+    "hard_skill_match",
+    "experience_depth",
+    "innovation_potential",
+    "execution_goal_breakdown",
+    "team_fit",
+    "willingness",
+    "stability",
+]
+
+
+def _load_scoring_templates() -> Dict[str, Any]:
+    """加载评分模板配置（全局缓存）。"""
+    global _TEMPLATES_CACHE
+    if _TEMPLATES_CACHE is not None:
+        return _TEMPLATES_CACHE
+    template_path = Path(__file__).parent.parent / "configs" / "scoring_templates.yaml"
+    if template_path.exists():
+        with open(template_path, encoding="utf-8") as f:
+            _TEMPLATES_CACHE = yaml.safe_load(f)
+    else:
+        _TEMPLATES_CACHE = {"templates": {}, "default_template": "b2b_product_general"}
+    return _TEMPLATES_CACHE
+
+
+def _select_scoring_template(
+    candidate: Dict[str, Any],
+    source_candidate: Dict[str, Any],
+    input_data: Dict[str, Any],
+) -> str:
+    """
+    根据 JD 标题 / 候选人角色选择模板 ID。
+    优先级：JD title 命中 > 候选人角色命中 > default_template
+    """
+    templates_cfg = _load_scoring_templates()
+    selection_rules = templates_cfg.get("template_selection", [])
+
+    # 尝试从 input_data 提取 JD title
+    job_description = ""
+    if isinstance(input_data, dict):
+        jd = input_data.get("job_description", {})
+        if isinstance(jd, dict):
+            job_description = _clean_text(jd.get("title", ""))
+        elif isinstance(jd, str):
+            job_description = jd
+
+    # 提取候选人角色
+    candidate_role = _extract_role_label(candidate, source_candidate)
+
+    # 遍历选择规则
+    for rule in selection_rules:
+        when = rule.get("when", {})
+        jd_keywords = when.get("jd_title_contains_any", [])
+        role_keywords = when.get("candidate_role_contains_any", [])
+
+        if jd_keywords and any(kw in job_description for kw in jd_keywords):
+            return rule["use"]
+        if role_keywords and any(kw in candidate_role for kw in role_keywords):
+            return rule["use"]
+
+    return templates_cfg.get("default_template", "b2b_product_general")
+
+
+def _infer_industry_adjustments(
+    input_data: Dict[str, Any],
+    candidate: Dict[str, Any],
+    source_candidate: Dict[str, Any],
+) -> Dict[str, int]:
+    """
+    轻量行业修正。
+    目前检测 JD/company_context 中是否出现医疗相关关键词。
+    """
+    adjustments: Dict[str, int] = {}
+    if not isinstance(input_data, dict):
+        return adjustments
+
+    jd = input_data.get("job_description", {})
+    context = input_data.get("company_context", "")
+    combined = ""
+    if isinstance(jd, dict):
+        combined = _clean_text(jd.get("title", "")) + " " + _clean_text(jd.get("description", ""))
+    elif isinstance(jd, str):
+        combined = jd
+    combined += " " + _clean_text(context)
+
+    healthcare_keywords = ["医疗", "健康", "医院", "互联网医疗", "区域健康", "biotech", "healthcare"]
+    if any(kw.lower() in combined.lower() for kw in healthcare_keywords):
+        adj = _load_scoring_templates().get("industry_adjustments", {}).get("healthcare", {}).get("add", {})
+        adjustments.update({k: v for k, v in adj.items() if v})
+
+    return adjustments
+
+
+def _normalize_structured_score(
+    raw: Any,
+    template_cfg: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    标准化 structured_score：
+    - 补全缺失维度（默认 0）
+    - evidence 补空字符串
+    - 维度值 clamp 到 [0, 100]
+    """
+    if not isinstance(raw, dict):
+        raw = {}
+
+    ds = raw.get("dimension_scores", {})
+    de = raw.get("dimension_evidence", {})
+
+    normalized_ds: Dict[str, float] = {}
+    normalized_de: Dict[str, str] = {}
+
+    for dim in DIMENSIONS_7:
+        raw_val = ds.get(dim) if isinstance(ds, dict) else None
+        normalized_ds[dim] = _clamp_score(raw_val, default=0)
+        ev = de.get(dim) if isinstance(de, dict) else None
+        normalized_de[dim] = _clean_text(ev) if ev else ""
+
+    return {
+        "dimension_scores": normalized_ds,
+        "dimension_evidence": normalized_de,
+        "template_id": _clean_text(raw.get("template_id")) or template_cfg.get("description", ""),
+    }
+
+
+def _apply_weight_adjustments(
+    base_weights: Dict[str, int],
+    adjustments: Dict[str, int],
+) -> Dict[str, int]:
+    """对基础权重应用行业调整，返回新权重（整数）。"""
+    result = dict(base_weights)
+    for dim, delta in adjustments.items():
+        if dim in result:
+            result[dim] = max(0, result[dim] + delta)
+    return result
+
+
+def _normalize_weights(weights: Dict[str, int]) -> Dict[str, float]:
+    """将整数权重归一化为和为100的浮点权重。"""
+    total = sum(weights.values())
+    if total == 0:
+        return {k: 0.0 for k in weights}
+    return {k: (v / total) * 100 for k, v in weights.items()}
+
+
+def _compute_weighted_total(
+    dimension_scores: Dict[str, float],
+    weights: Dict[str, int],
+) -> float:
+    """用整数权重计算加权总分（权重会自动归一化）。"""
+    norm = _normalize_weights(weights)
+    total = sum(dimension_scores.get(dim, 0) * norm[dim] / 100 for dim in DIMENSIONS_7)
+    return round(total, 2)
+
+
+def _derive_legacy_score_breakdown(structured_score: Dict[str, Any]) -> Dict[str, float]:
+    """
+    从 structured_score 映射生成 legacy score_breakdown。
+    映射关系：
+      hard_skill  <- hard_skill_match
+      experience  <- experience_depth
+      stability   <- stability
+      potential   <- (innovation_potential + execution_goal_breakdown) / 2
+      conversion  <- willingness * 0.7 + team_fit * 0.3
+    """
+    ds = structured_score.get("dimension_scores", {})
+    if not ds:
+        return {}
+
+    hsm = _clamp_score(ds.get("hard_skill_match"), default=0)
+    exp = _clamp_score(ds.get("experience_depth"), default=0)
+    stab = _clamp_score(ds.get("stability"), default=0)
+    inno = _clamp_score(ds.get("innovation_potential"), default=0)
+    exec_ = _clamp_score(ds.get("execution_goal_breakdown"), default=0)
+    will = _clamp_score(ds.get("willingness"), default=0)
+    team = _clamp_score(ds.get("team_fit"), default=0)
+
+    return {
+        "hard_skill": hsm,
+        "experience": exp,
+        "stability": stab,
+        "potential": round((inno + exec_) / 2, 2),
+        "conversion": round(will * 0.7 + team * 0.3, 2),
+    }
+
+
+def _process_structured_score(
+    candidate: Dict[str, Any],
+    source_candidate: Dict[str, Any],
+    input_data: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    处理 structured_score 的主入口：
+    1. 解析并标准化
+    2. 选择模板 + 应用行业修正
+    3. 重算 weighted_total
+    4. 生成 legacy score_breakdown
+    5. 用 weighted_total 覆盖 candidate.total_score
+    """
+    templates_cfg = _load_scoring_templates()
+    template_id = _select_scoring_template(candidate, source_candidate, input_data)
+    template = templates_cfg.get("templates", {}).get(template_id, {})
+    base_weights: Dict[str, int] = dict(template.get("weights", {}))
+    if not base_weights:
+        base_weights = {d: 0 for d in DIMENSIONS_7}
+
+    raw_ss = candidate.get("structured_score", {})
+    normalized_ss = _normalize_structured_score(raw_ss, template)
+
+    # 应用行业修正
+    adjustments = _infer_industry_adjustments(input_data, candidate, source_candidate)
+    adjusted_weights = _apply_weight_adjustments(base_weights, adjustments)
+
+    # 重算加权总分
+    weighted_total = _compute_weighted_total(normalized_ss["dimension_scores"], adjusted_weights)
+
+    # 回填 weighted_total 和 weight_snapshot
+    normalized_ss["weighted_total"] = weighted_total
+    normalized_ss["weight_snapshot"] = {k: adjusted_weights.get(k, 0) for k in DIMENSIONS_7}
+    normalized_ss["template_id"] = template_id
+
+    # 生成 legacy score_breakdown
+    legacy_breakdown = _derive_legacy_score_breakdown(normalized_ss)
+
+    # 用脚本计算值覆盖 total_score
+    candidate["total_score"] = weighted_total
+    candidate["score_breakdown"] = legacy_breakdown
+    candidate["structured_score"] = normalized_ss
+
+    return normalized_ss
+
+
 def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     修正模型可能的输出问题，让系统稳定运行。
@@ -912,6 +1153,10 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
         candidate_id = _clean_text(candidate.get("candidate_id")) or f"unknown_{index}"
         source_candidate = candidate_lookup.get(candidate_id, {})
 
+        # P5: 处理 structured_score（7维评分体系）
+        # 会重算 weighted_total 并覆盖 candidate["total_score"]
+        # 也会设置 candidate["score_breakdown"] 为 legacy 映射
+        structured_score = _process_structured_score(candidate, source_candidate, input_data or {})
         total_score = _clamp_score(candidate.get("total_score"), default=0)
 
         decision = candidate.get("decision")
@@ -985,7 +1230,7 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
                 "role_label": role_label,
             })
 
-        score_breakdown = _normalize_score_breakdown(candidate.get("score_breakdown"), total_score)
+        score_breakdown = candidate.get("score_breakdown", {})
 
         normalized_candidate = {
             "candidate_id": candidate_id,
@@ -997,6 +1242,7 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
             "decision": decision,
             "priority": priority,
             "action_timing": action_timing,
+            "structured_score": structured_score,
             "core_judgement": core_judgement,
             "reasons": reasons,
             "risks": risks,

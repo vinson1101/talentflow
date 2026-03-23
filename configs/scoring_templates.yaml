@@ -1,0 +1,115 @@
+version: v1
+
+default_template: b2b_product_general
+
+templates:
+  b2b_product_general:
+    description: 标准B端产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 20
+      innovation_potential: 15
+      execution_goal_breakdown: 20
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+
+  innovation_product:
+    description: 创新型产品 / 0-1 产品
+    weights:
+      hard_skill_match: 25
+      experience_depth: 15
+      innovation_potential: 25
+      execution_goal_breakdown: 20
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+
+  transition_to_product:
+    description: 项目/实施/解决方案转产品
+    weights:
+      hard_skill_match: 25
+      experience_depth: 15
+      innovation_potential: 10
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 10
+      stability: 10
+    gates:
+      min_hard_skill_for_a: 45
+      min_willingness_for_a: 40
+
+  campus_product:
+    description: 校招 / 应届产品
+    weights:
+      hard_skill_match: 30
+      experience_depth: 0
+      innovation_potential: 25
+      execution_goal_breakdown: 20
+      team_fit: 10
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 45
+
+  senior_product_complex:
+    description: 高级产品经理 / 复杂业务产品
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+
+template_selection:
+  - when:
+      jd_title_contains_any: ["高级产品经理"]
+    use: senior_product_complex
+
+  - when:
+      jd_title_contains_any: ["产品经理", "B端产品经理"]
+    use: b2b_product_general
+
+  - when:
+      jd_title_contains_any: ["产品助理", "校招", "应届"]
+    use: campus_product
+
+  - when:
+      jd_title_contains_any: ["创新产品经理", "0-1产品经理", "新业务产品"]
+    use: innovation_product
+
+  - when:
+      candidate_role_contains_any: ["项目经理", "实施工程师", "解决方案工程师", "顾问"]
+    use: transition_to_product
+
+industry_adjustments:
+  healthcare:
+    add:
+      hard_skill_match: 5
+      experience_depth: 5
+
+  innovation_heavy:
+    add:
+      innovation_potential: 5
+      execution_goal_breakdown: 5
+      experience_depth: -5
+      stability: -5
+
+  delivery_heavy:
+    add:
+      execution_goal_breakdown: 5
+      team_fit: 5
+      innovation_potential: -5

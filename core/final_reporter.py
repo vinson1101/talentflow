@@ -245,6 +245,28 @@ class FinalReporter:
         lines.append(f"- **优先级**: {candidate.get('priority', '-')}")
         lines.append(f"- **联系时机**: {self._timing_label(candidate.get('action_timing'))}")
 
+        # P5: 展示 7 维 structured_score
+        ss = candidate.get("structured_score", {})
+        if ss and isinstance(ss, dict) and ss.get("dimension_scores"):
+            ws = ss.get("weight_snapshot", {})
+            lines.append("")
+            lines.append("**7维评分**:")
+            dim_labels = {
+                "hard_skill_match": "硬技能匹配",
+                "experience_depth": "经验深度",
+                "innovation_potential": "创新潜能",
+                "execution_goal_breakdown": "目标拆解执行",
+                "team_fit": "团队融合",
+                "willingness": "意愿度",
+                "stability": "稳定性",
+            }
+            for dim, label in dim_labels.items():
+                score = ss["dimension_scores"].get(dim, 0)
+                weight = ws.get(dim, 0)
+                evidence = ss.get("dimension_evidence", {}).get(dim, "")
+                ev_text = f"（{evidence[:20]}…）" if evidence and len(evidence) > 20 else (f"（{evidence}）" if evidence else "")
+                lines.append(f"- {label} {int(score)}分(权重{weight}%) {ev_text}")
+
         lines.append("")
         lines.append("**核心判断**:")
         lines.append(f"- {self._summary_judgement(candidate)}")
