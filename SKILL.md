@@ -101,6 +101,30 @@ TalentFlow 负责：
 
 ---
 
+### 4.4 评分体系责任边界
+
+**核心原则：HuntMind 负责判断，脚本负责算分与守门。**
+
+**HuntMind（模型）负责**：
+- 对每个候选人按 7 维结构输出原始评分（`structured_score.dimension_scores`）
+- 每个维度附简短判断依据（`dimension_evidence`）
+- 给出 decision、reasons、risks、action 建议
+
+**TalentFlow（脚本）负责**：
+- 根据 JD 标题 / 候选人角色选择评分模板（`configs/scoring_templates.yaml`）
+- 应用行业修正，重算 `weighted_total`，覆盖模型原始 `total_score`
+- 自动生成 legacy `score_breakdown`（兼容层）
+- 执行 gate 检查（A 类门槛 / no 门槛）
+- 决定 priority、action_timing、rank
+- 执行 identity conflict 检查和 decision-action 一致性守门
+
+**禁止**：
+- 脚本不得修改模型原始 `dimension_scores`
+- 不得将 `score_breakdown` 当作主评分真相
+- 不得跳过 `quality_gate.py` 直接交付结果
+
+---
+
 ## 5. 支持的输入形态
 
 支持以下输入：
@@ -320,6 +344,7 @@ TalentFlow 负责：
 
 - `references/decision-policy.md`
 - `references/output-contract.md`
+- `references/scoring-policy.md` — **7维评分体系主规则**（含责任边界）
 - `references/conversion-guidelines.md`
 - `references/writing-style-constraints.md`
 

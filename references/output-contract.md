@@ -54,12 +54,13 @@
 - `rank` 必须从 1 开始递增
 - `rank=1` 表示当前批次最值得优先联系的人
 - `total_score` 使用 0-100 分
+- **`total_score` 以脚本重算的 `weighted_total` 为准**，模型原始值仅作参考，runner 会覆盖
 
 ---
 
 ## structured_score（主评分结构）
 
-**，以后以本结构为准，旧 score_breakdown 仅作兼容层。**
+**以后以本结构为准，旧 score_breakdown 仅作兼容层。**
 
 `structured_score` 包含以下字段：
 

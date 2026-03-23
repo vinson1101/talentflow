@@ -108,3 +108,50 @@
 
 ### maybe 建议
 - 总分中段，存在一两个关键待验证点
+
+---
+
+## 责任边界：模型判断 vs 脚本算分
+
+### HuntMind（模型）负责
+- 对每个维度给出 **0-100 的原始分数**
+- 对每个维度写出 **简短判断依据**（evidence）
+- 负责 `structured_score.dimension_scores` 和 `structured_score.dimension_evidence`
+- 决定 `decision`（strong_yes / yes / maybe / no）
+- 给出判断理由（reasons）和风险（risks）
+
+### TalentFlow 脚本负责
+- 根据 JD 标题和候选人角色**选择模板**（`b2b_product_general` / `senior_product_complex` / 等）
+- 应用**行业修正**（如医疗行业 +hard_skill_match / +experience_depth）
+- 用模板权重**重算 weighted_total**，覆盖模型原始 `total_score`
+- 从 `structured_score` **映射生成 legacy `score_breakdown`**
+- 执行 **gate 检查**（hard_skill / willingness / experience_depth 门槛）
+- 决定 **priority**（A/B/C）和 **action_timing**（today / this_week / optional）
+- 执行质量守门（identity conflict / decision-action 一致性 / fallback ratio）
+
+### 模型输出要求
+HuntMind 输出的 `structured_score` 必须包含：
+
+| 字段 | 说明 |
+|------|------|
+| `dimension_scores` | 7 个维度的原始分数（0-100），缺失则脚本填 0 |
+| `dimension_evidence` | 7 个维度的简短依据字符串，允许空 |
+| `template_id` | 模板 ID（参考 `configs/scoring_templates.yaml`，脚本会覆盖） |
+
+### 脚本算分流程
+1. **选择模板**：JD 标题命中 → 候选人角色命中 → `default_template`
+2. **行业修正**：检测 JD/company_context 中的医疗关键词，应用 healthcare 调整
+3. **重算总分**：`weighted_total = Σ(dimension_score × 归一化权重)`
+4. **回填 legacy**：`score_breakdown` = 脚本自动映射（不再信任模型原始值）
+5. **Gate 检查**：不满足 A-gate 的维度直接降级 priority
+
+### 模板与权重原则
+- 权重和必须等于 100
+- 不同岗位模板权重不同（高级岗加重经验/硬技能，校招减经验、加重潜力）
+- 行业修正为加减法，不改变权重结构
+- 行业修正示例：医疗岗 +hard_skill +experience / 创新岗 +innovation_potential
+
+### 禁止事项
+- 脚本不得修改 `dimension_scores` 的原始值（只用来算加权总分）
+- `score_breakdown` 不再是主评分真相，仅为 legacy 兼容层
+- 模型不得省略 `structured_score` 任意维度（缺失由脚本补 0，不抛错）
