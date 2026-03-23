@@ -312,6 +312,11 @@ def _extract_name(file_name: str, raw_resume: str) -> Tuple[str, str]:
     if name:
         return name, "resume_standalone"
 
+    # 1d. 独立成行的中文姓名（fallback）
+    name = _extract_standalone_name(raw_resume)
+    if name:
+        return name, "resume_content"
+
     # --- 层级2：文件名 fallback ---
     name = _extract_name_from_file_name(file_name)
     if name:
@@ -515,6 +520,37 @@ def _looks_like_resume_name(value: str) -> bool:
         return all(part.lower() not in SECTION_HEADING_WORDS for part in parts)
 
     return False
+
+
+def _extract_standalone_name(raw_resume: str) -> Optional[str]:
+    """
+    Fallback：扫描简历前20行，找独立成行的中文姓名（2-4字，无其他杂质）。
+    排除包含关键词的行（如公司、职位、学院、日期、邮箱等）。
+    """
+    lines = raw_resume.splitlines()
+    lines = [l.strip() for l in lines if l.strip()][:20]
+
+    REJECT_SUBSTRINGS = (
+        "公司", "职位", "岗位", "经理", "工程师", "总监", "部长", "主管",
+        "学院", "大学", "学校", "本科", "硕士", "博士", "学历", "专业",
+        "经验", "工作", "项目", "产品", "负责", "开发", "设计", "运营",
+        "简历", "求职", "应聘", "联系", "电话", "手机", "邮箱", "微信",
+        "生日", "出生", "年龄", "性别", "地址", "居住", "户籍",
+        "日期", "时间", "年/月", "年.0", "——", "：", "：",
+        "practice", "experience", "education", "skills", "project",
+    )
+
+    for line in lines:
+        # 只接受纯中文2-4字的行
+        if not re.match(r"^[\u4e00-\u9fff]{2,4}$", line):
+            continue
+        # 排除包含拒收关键词的行
+        if any(kw in line for kw in REJECT_SUBSTRINGS):
+            continue
+        if _looks_like_high_confidence_name(line):
+            return line
+
+    return None
 
 
 def _looks_like_high_confidence_name(value: str) -> bool:
