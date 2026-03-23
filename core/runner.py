@@ -756,6 +756,139 @@ def validate_output(output_text: str) -> Dict[str, Any]:
 # ==============================
 # 2. 数据清洗与业务兜底
 # ==============================
+def _looks_like_person_name(value: str) -> bool:
+    if not value:
+        return False
+    if len(value) < 2:
+        return False
+    if not re.match(r"^[\u4e00-\u9fff·]+$", value):
+        return False
+    if value[0] in {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}:
+        return False
+    return True
+
+
+def _build_alias_set(candidate: Dict[str, Any], source_candidate: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Build alias set from candidate and source candidate.
+    Returns a dict with:
+      canonical: the resolved canonical name
+      aliases: list of alias strings (may include old filenames, partial names, etc.)
+      sources: list of where each alias came from
+    """
+    canonical = _extract_candidate_name(candidate, source_candidate)
+    aliases: List[str] = []
+    alias_sources: List[str] = []
+
+    def _add_alias(alias: str, source: str):
+        """Add alias, extracting name from filenames/ids if needed."""
+        if not alias or alias == canonical:
+            return
+        aliases.append(alias)
+        alias_sources.append(f"{source}:{alias}")
+        # Extract Chinese name from compound identifiers
+        # e.g. "产品经理_宁波8-13K_吴小姐_9年.pdf" -> "吴小姐"
+        extracted = _find_name_in_identifier(alias)
+        if extracted and extracted != canonical and extracted not in aliases:
+            aliases.append(extracted)
+            alias_sources.append(f"extracted_from_{source}:{extracted}")
+        # Also add English tokens as potential aliases (e.g. "Rango" from same filename)
+        # Split by non-alphanumeric and check each token
+        raw_tokens = re.split(r"[^a-zA-Z0-9]", alias)
+        for token in raw_tokens:
+            if token and token not in aliases and token != canonical:
+                if 2 <= len(token) <= 20 and token[0].isalpha() and token[0].isupper():
+                    # Looks like an English name (capitalized, 2-20 chars)
+                    aliases.append(token)
+                    alias_sources.append(f"token_from_{source}:{token}")
+
+    # Collect from candidate and source
+    for current in (source_candidate, candidate):
+        if not isinstance(current, dict):
+            continue
+        # name fields
+        for key in ("name", "candidate_name", "real_name", "resume_name"):
+            v = _clean_text(current.get(key))
+            if v and v != canonical:
+                _add_alias(v, key)
+        # candidate_id / id
+        for key in ("candidate_id", "id"):
+            v = _clean_text(current.get(key))
+            if v:
+                _add_alias(v, key)
+        # source.file_name
+        source = current.get("source", {})
+        v = _clean_text(source.get("file_name"))
+        if v:
+            _add_alias(v, "file_name")
+
+    # Deduplicate
+    seen = set()
+    unique_aliases: List[str] = []
+    for a in aliases:
+        if a not in seen:
+            seen.add(a)
+            unique_aliases.append(a)
+
+    return {
+        "canonical": canonical,
+        "aliases": unique_aliases,
+        "sources": alias_sources,
+    }
+
+
+def _find_alias_hits(text: str, canonical: str, aliases: List[str]) -> List[str]:
+    """
+    Find which aliases appear in text as standalone person-like tokens.
+    Handles:
+      - Standalone alias: "吴小姐"
+      - Parenthetical alias: "吴小姐（孙铜）" or "吴小姐 - 孙铜"
+      - Hybrid: "唐晓斌（Rango）"
+    Returns list of found alias hits.
+    """
+    if not text:
+        return []
+    hits: List[str] = []
+
+    for alias in aliases:
+        if not alias or alias == canonical:
+            continue
+        if _is_hash_like(alias):
+            continue
+
+        # Pattern 1: "alias（canonical）" or "alias - canonical" (alias followed by separator+text)
+        combo_pattern = re.escape(alias) + r"[（()\-–— ]+" + r"[^\n（）()\-–—]{1,20}"
+        for m in re.finditer(combo_pattern, text):
+            hits.append(alias)
+            break
+
+        # Pattern 1b: "(alias)" or "alias（...）" (alias inside or preceded by bracket)
+        # e.g. "唐晓斌（Rango）" or "Rango）" preceded by "（"
+        bracket_before = r"[（()\[【】】]\s*" + re.escape(alias) + r"(?:\s*[）()\]【】】])?"
+        for m in re.finditer(bracket_before, text):
+            hits.append(alias)
+            break
+        # Also: alias followed immediately by full-width right paren
+        bracket_after = re.escape(alias) + r"\s*[）()\]【】】]"
+        for m in re.finditer(bracket_after, text):
+            hits.append(alias)
+            break
+
+        # Pattern 2: standalone alias as distinct token (no adjacent Chinese chars)
+        pattern = re.escape(alias)
+        for m in re.finditer(pattern, text):
+            start = m.start()
+            end = m.end()
+            before = text[start - 1] if start > 0 else " "
+            after = text[end] if end < len(text) else " "
+            # Accept if not surrounded by Chinese characters
+            if not re.match(r"[\u4e00-\u9fff]", before) and not re.match(r"[\u4e00-\u9fff]", after):
+                hits.append(alias)
+                break
+
+    return hits
+
+
 def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     修正模型可能的输出问题，让系统稳定运行。
@@ -808,6 +941,30 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
             source_candidate,
         )
 
+        # P1 identity conflict check: core_judgement
+        alias_info = _build_alias_set(candidate, source_candidate)
+        cj_hits = _find_alias_hits(core_judgement, candidate_name, alias_info["aliases"])
+        identity_meta: Dict[str, Any] = {
+            "canonical_name": candidate_name,
+            "has_conflict": bool(cj_hits),
+            "conflict_fields": [],
+            "alias_hits": cj_hits,
+            "resolution": "unchanged",
+        }
+        if cj_hits:
+            # Rebuild core_judgement from scratch
+            core_judgement = _build_core_judgement({
+                **candidate,
+                "candidate_name": candidate_name,
+                "name": candidate_name,
+                "role_label": role_label,
+                "total_score": total_score,
+                "decision": decision,
+                "priority": priority,
+            })
+            identity_meta["conflict_fields"].append("core_judgement")
+            identity_meta["resolution"] = "rebuilt_core_judgement"
+
         reasons = _clean_str_list(candidate.get("reasons"))
         if len(reasons) < 3:
             reasons = (reasons + _fallback_reasons({
@@ -846,6 +1003,36 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
             "score_breakdown": score_breakdown,
         }
         normalized_candidate["action"] = _normalize_action(normalized_candidate, candidate.get("action"))
+
+        # P1 identity conflict check: action fields
+        action = normalized_candidate["action"]
+        hook = action.get("hook_message", "")
+        tmpl = action.get("message_template", "")
+
+        h_hits = _find_alias_hits(hook, candidate_name, alias_info["aliases"])
+        t_hits = _find_alias_hits(tmpl, candidate_name, alias_info["aliases"])
+
+        if h_hits:
+            identity_meta["conflict_fields"].append("action.hook_message")
+            identity_meta["alias_hits"] = list(set(identity_meta["alias_hits"] + h_hits))
+            action["hook_message"] = _build_personalized_hook_message(normalized_candidate)
+            if not identity_meta["resolution"] or identity_meta["resolution"] == "unchanged":
+                identity_meta["resolution"] = "rebuilt_hook_message"
+
+        if t_hits:
+            identity_meta["conflict_fields"].append("action.message_template")
+            identity_meta["alias_hits"] = list(set(identity_meta["alias_hits"] + t_hits))
+            action["message_template"] = _build_fallback_message_template(
+                normalized_candidate,
+                {"hook_message": action.get("hook_message", ""), "verification_question": action.get("verification_question", "")},
+            )
+            if not identity_meta["resolution"] or identity_meta["resolution"] == "unchanged":
+                identity_meta["resolution"] = "rebuilt_message_template"
+
+        if identity_meta["has_conflict"] and not identity_meta["resolution"]:
+            identity_meta["resolution"] = "resolved"
+
+        normalized_candidate["identity_meta"] = identity_meta
         sanitized.append(normalized_candidate)
 
     data["top_recommendations"] = _sort_recommendations(sanitized)

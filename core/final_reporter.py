@@ -324,7 +324,7 @@ class FinalReporter:
         lines.append("## 建议立即行动")
         lines.append(f"- 今日优先联系：{len(today_candidates)} 人")
         lines.append(f"- 本周建议联系：{len(this_week_candidates)} 人")
-        lines.append(f"- 备选观察：{len(optional_candidates)} 人")
+        lines.append(f"- 可选/观察档：{len(optional_candidates)} 人")
         lines.append("")
 
         lines.append("## Top 5 候选人")
@@ -470,7 +470,12 @@ class FinalReporter:
         if "项目经理" in role_label:
             if decision in {"strong_yes", "yes"}:
                 return f"{display_name}具备项目推进与跨团队协同经验，建议进入首轮沟通，重点核实产品设计与需求定义的直接职责深度。"
+            if decision == "no":
+                return f"{display_name}与目标岗位匹配度偏弱，当前不建议作为正式候选人推进。"
             return f"{display_name}与目标岗位存在一定相关性，可作为备选，建议优先确认产品职责重合度。"
+
+        if decision == "no":
+            return f"{display_name}与目标岗位匹配度偏弱，当前不建议作为正式候选人推进。"
 
         if priority == "A":
             return f"{display_name}与目标岗位匹配度较高，综合评分{score}分，建议优先联系。"
