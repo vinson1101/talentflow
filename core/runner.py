@@ -1061,12 +1061,14 @@ def log_decision(input_data: Dict[str, Any], output_data: Dict[str, Any]):
 # ==============================
 def evaluate_output_quality(data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    用来判断输出是否存在明显弱化：
-    - 没有候选人
-    - 没有有效分数
-    - 分差过小
-    - 没有 A 优先级
-    - 默认兜底文案占比过高
+    重构后的质量评估，覆盖四类质量维度：
+
+    1. 结构质量：有没有候选人、有效分数、分差
+    2. 决策质量：decision 分布、A 优先级的存在
+    3. Identity 一致性：alias conflict 检测
+    4. Action 一致性：decision 与 action.should_contact 是否匹配
+
+    质量 flag 优先级：invalid > identity_conflict > weak_* > ok
     """
     candidates = data.get("top_recommendations", [])
 
@@ -1085,12 +1087,33 @@ def evaluate_output_quality(data: Dict[str, Any]) -> Dict[str, Any]:
             "quality_flag": "invalid",
         }
 
-    avg_score = sum(scores) / len(scores)
+    n = len(candidates)
+    avg_score = sum(scores) / n
     variance = max(scores) - min(scores)
 
-    has_a = any(candidate.get("priority") == "A" for candidate in candidates)
-    contact_ratio = sum(1 for candidate in candidates if candidate.get("action", {}).get("should_contact")) / len(candidates)
+    # --- Decision vs Action 一致性 ---
+    strong_yes_or_yes = {"strong_yes", "yes"}
+    decision_contact_count = sum(1 for c in candidates if c.get("decision") in strong_yes_or_yes)
+    decision_contact_ratio = decision_contact_count / n
 
+    action_contact_count = sum(1 for c in candidates if c.get("action", {}).get("should_contact"))
+    action_contact_ratio = action_contact_count / n
+
+    # 一致：decision 说 yes 且 action 说 contact；或 decision 说 no/maybe 且 action 说勿联系
+    consistent_count = sum(
+        1 for c in candidates
+        if (c.get("decision") in strong_yes_or_yes) == bool(c.get("action", {}).get("should_contact"))
+    )
+    decision_action_consistency = consistent_count / n
+    decision_action_consistency_rate = round(decision_action_consistency * 100, 1)
+
+    # --- Identity conflict ---
+    identity_conflict_count = sum(
+        1 for c in candidates if c.get("identity_meta", {}).get("has_conflict")
+    )
+    identity_conflict_ratio = round(identity_conflict_count / n, 2) if n > 0 else 0
+
+    # --- Fallback message ratio ---
     fallback_message_count = 0
     for candidate in candidates:
         message = _clean_text(candidate.get("action", {}).get("message_template"))
@@ -1100,39 +1123,73 @@ def evaluate_output_quality(data: Dict[str, Any]) -> Dict[str, Any]:
             or "更偏产品落地与流程设计的岗位" in message
         ):
             fallback_message_count += 1
+    fallback_message_ratio = fallback_message_count / n
 
-    fallback_message_ratio = fallback_message_count / len(candidates)
+    has_a = any(c.get("priority") == "A" for c in candidates)
 
+    # --- 质量判定 ---
     quality_flag = "ok"
     issue = ""
 
-    if variance < 10:
+    # P4: Identity conflict 最高优先级
+    if identity_conflict_count > 0:
+        quality_flag = "identity_conflict"
+        issue = f"identity_conflict_count={identity_conflict_count}"
+
+    elif variance < 10:
         quality_flag = "low_variance"
         issue = "scores_too_close"
 
-    if not has_a and len(candidates) >= 3:
+    elif not has_a and n >= 3:
         quality_flag = "weak_ranking"
         issue = "no_priority_a"
 
-    if fallback_message_ratio > 0.5:
+    elif fallback_message_ratio > 0.5:
         quality_flag = "weak_action_quality"
         issue = "too_many_fallback_messages"
 
+    elif decision_action_consistency < 0.8:
+        quality_flag = "decision_action_mismatch"
+        issue = "decision_action_inconsistent"
+
+    elif action_contact_ratio > decision_contact_ratio + 0.3:
+        quality_flag = "over_contact_risk"
+        issue = "action_contact_ratio_too_high"
+
+    # --- 质量分数 ---
     quality_score = 100
+    if identity_conflict_count > 0:
+        quality_score -= identity_conflict_count * 15
     if variance < 10:
-        quality_score -= 20
-    if not has_a and len(candidates) >= 3:
         quality_score -= 15
+    if not has_a and n >= 3:
+        quality_score -= 10
     if fallback_message_ratio > 0.5:
+        quality_score -= 10
+    if decision_action_consistency < 0.8:
         quality_score -= 15
+    if action_contact_ratio > decision_contact_ratio + 0.3:
+        quality_score -= 10
 
     return {
+        # 基础指标
         "quality_score": max(0, quality_score),
         "avg_score": round(avg_score, 2),
         "score_variance": round(variance, 2),
-        "candidate_count": len(candidates),
+        "candidate_count": n,
+        # P4 新增：决策与 Action 一致性
+        "decision_contact_ratio": round(decision_contact_ratio, 2),
+        "action_contact_ratio": round(action_contact_ratio, 2),
+        "decision_action_consistency_rate": decision_action_consistency_rate,
+        "decision_action_consistency": round(decision_action_consistency, 2),
+        # P4 新增：Identity 一致性
+        "identity_conflict_count": identity_conflict_count,
+        "identity_conflict_ratio": identity_conflict_ratio,
+        # P4 新增：report 一致性（暂未联动，固定 false）
+        "report_consistency_flag": False,
+        # 原有字段（保留，兼容旧调用方）
         "has_priority_a": has_a,
-        "contact_ratio": round(contact_ratio, 2),
+        "contact_ratio": round(action_contact_ratio, 2),  # 重命名 alias
         "fallback_message_ratio": round(fallback_message_ratio, 2),
         "quality_flag": quality_flag,
         "issue": issue,
