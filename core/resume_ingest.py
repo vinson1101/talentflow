@@ -24,6 +24,7 @@ MAX_RAW_RESUME_LENGTH = 30000
 
 NAME_LABEL_PATTERNS = [
     re.compile(r"(?:^|\n)\s*姓名\s*[:：]?\s*([^\n]{1,40})"),
+    re.compile(r"(?:^|\n)\s*姓\s*名\s*[:：]?\s*([^\n]{1,40})"),  # 处理"姓 名"有空格的情况
     re.compile(r"(?:^|\n)\s*(?:Name|NAME|name)\s*[:：]?\s*([^\n]{1,40})"),
     re.compile(r"(?:^|\n)\s*(?:候选人|应聘者)\s*[:：]?\s*([^\n]{1,40})"),
 ]
@@ -51,11 +52,13 @@ NAME_STOPWORDS = {
     "skills",
 }
 NAME_REJECT_KEYWORDS = (
+    # 简历/求职相关
     "简历",
     "求职",
     "应聘",
     "岗位",
     "职位",
+    # 职位名称
     "产品经理",
     "高级产品经理",
     "项目经理",
@@ -65,20 +68,25 @@ NAME_REJECT_KEYWORDS = (
     "工程师",
     "总监",
     "经理",
+    # 章节标题
     "工作经历",
     "教育经历",
     "项目经历",
+    "项目文档",
+    "基本资料",
     "自我评价",
     "个人优势",
     "求职意向",
     "基本信息",
     "联系方式",
+    # 联系信息
     "电话",
     "手机",
     "邮箱",
     "微信",
     "现居",
     "地址",
+    # 教育背景
     "本科",
     "硕士",
     "博士",
@@ -86,6 +94,7 @@ NAME_REJECT_KEYWORDS = (
     "学院",
     "学校",
     "科技大学",
+    # 英文章节
     "about",
     "experience",
     "education",
@@ -94,6 +103,11 @@ NAME_REJECT_KEYWORDS = (
     "summary",
     "requirement",
     "requirements",
+    # 常见短语
+    "期望薪资",
+    "到岗时间",
+    "工作地区",
+    "居住地",
 )
 SECTION_HEADING_WORDS = {
     "about me",
@@ -286,6 +300,15 @@ def _extract_name(file_name: str, raw_resume: str) -> Tuple[str, str]:
     if _looks_like_high_confidence_name(first_line):
         return first_line, "first_line_fallback"
 
+    # 最后手段：使用整个文件名（不做验证），避免返回"未知候选人"
+    stem = Path(file_name).stem.strip()
+    if stem:
+        # 尝试清理但保留基本可读性
+        cleaned = re.sub(r"[_\-]+", " ", stem)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        if cleaned and cleaned not in NAME_STOPWORDS:
+            return cleaned, "filename_last_resort"
+
     return "未知候选人", "unknown"
 
 
@@ -322,6 +345,10 @@ def _extract_supported_header_name_from_resume(raw_resume: str) -> Optional[str]
 
 
 def _has_header_support(lines: List[str], index: int, candidate: str) -> bool:
+    # 拒绝只有姓氏+敬称的组合（如"滕先生"、"吴小姐"）
+    if re.match(r"^[\u4e00-\u9fff]{1,2}(?:先生|女士|小姐)$", candidate):
+        return False
+
     line = lines[index]
     remainder = line.replace(candidate, " ", 1)
     if CONTACT_CONTEXT_PATTERN.search(remainder):
@@ -402,7 +429,12 @@ def _sanitize_name_candidate(value: str) -> str:
         maxsplit=1,
     )[0].strip()
 
+    # 只移除"先生/女士/小姐"，如果剩余部分至少2个字符（确保不是单独姓氏）
     text = re.sub(r"(?:先生|女士|小姐)$", "", text).strip()
+    if len(text) < 2:
+        # 如果剩余不足2字符，保留原始值（如"吴小姐"保留为"吴小姐"）
+        text = value.strip()
+        text = text.strip(" |｜/\\,，;；:：-_")
     text = text.strip(" |｜/\\,，;；:：-_")
     return text
 

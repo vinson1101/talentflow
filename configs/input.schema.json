@@ -84,7 +84,8 @@
               "parse_status": { "type": "string" },
               "parse_method": { "type": "string" },
               "text_length": { "type": "number" },
-              "is_truncated": { "type": "boolean" }
+              "is_truncated": { "type": "boolean" },
+              "name_source": { "type": "string" }
             },
             "additionalProperties": false
           }
