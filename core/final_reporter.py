@@ -326,76 +326,101 @@ class FinalReporter:
     def generate_owner_summary(
         self,
         candidates: List[Dict[str, Any]],
+        jd_title: str = "待确认",
+        jd_location: str = "待确认",
+        jd_salary: str = "待确认",
     ) -> str:
+        """
+        按 references/summary-card-template.md V1 生成人类可读摘要。
+
+        Args:
+            candidates: 候选人列表（从 final_output.json top_recommendations 获取）
+            jd_title: 岗位名称
+            jd_location: 工作城市
+            jd_salary: 薪资范围
+        """
         stats = self._load_summary_stats(candidates)
-        today_candidates = [candidate for candidate in candidates if candidate.get("action_timing") == "today"]
-        this_week_candidates = [candidate for candidate in candidates if candidate.get("action_timing") == "this_week"]
-        optional_candidates = [candidate for candidate in candidates if candidate.get("action_timing") == "optional"]
-        contact_candidates = [candidate for candidate in candidates if candidate.get("decision") in {"strong_yes", "yes"}]
-        maybe_candidates = [candidate for candidate in candidates if candidate.get("decision") == "maybe"]
 
-        lines = ["# 招聘决策摘要", ""]
-        lines.append("## 基本情况")
-        lines.append(f"- 总处理人数：{stats['total_processed']}")
-        lines.append(f"- 成功解析人数：{stats['successful_ingested']}")
-        lines.append(f"- 进入推荐池人数：{stats['recommended_count']}")
-        lines.append(f"- 值得联系人数：{len(contact_candidates)}")
-        lines.append(f"- 备选人数：{len(maybe_candidates)}")
+        # 分档
+        a_candidates = [c for c in candidates if c.get("priority") == "A" and c.get("decision") in {"strong_yes", "yes"}]
+        b_candidates = [c for c in candidates if c.get("priority") == "B" and c.get("decision") in {"strong_yes", "yes"}]
+        c_candidates = [c for c in candidates if c.get("decision") == "maybe"]
+        no_candidates = [c for c in candidates if c.get("decision") == "no"]
+        today_candidates = [c for c in candidates if c.get("action_timing") == "today"]
+        this_week_candidates = [c for c in candidates if c.get("action_timing") == "this_week"]
+
+        def _fmt(c: Dict[str, Any]) -> str:
+            score = int(float(c.get("total_score") or 0))
+            return f"{self._display_name(c)}（{score}分）"
+
+        def _fmt_list(cands: List[Dict[str, Any]]) -> str:
+            return "、".join(_fmt(c) for c in cands) if cands else "无"
+
+        def _risk_short(c: Dict[str, Any]) -> str:
+            risks = c.get("risks", [])
+            if not risks:
+                return "无明显风险"
+            r = self._normalize_risk(risks[0])
+            return r[:50] + ("…" if len(r) > 50 else "")
+
+        # ---- Block 1: 标题 ----
+        lines = [
+            f"【招聘决策报告】{jd_title} · {jd_location} · {jd_salary}",
+            "",
+        ]
+
+        # ---- Block 2: 批次概览 ----
+        lines.append(f"本批共处理 {len(candidates)} 份简历，决策结果：")
         lines.append("")
 
-        lines.append("## 建议立即行动")
-        lines.append(f"- 今日优先联系：{len(today_candidates)} 人")
-        lines.append(f"- 本周建议联系：{len(this_week_candidates)} 人")
-        lines.append(f"- 可选/观察档：{len(optional_candidates)} 人")
+        # ---- Block 3: 分档表 ----
+        lines.append("| 档位 | 人数 | 候选人 |")
+        lines.append("|---|---:|---|")
+        lines.append(f"| 🟢 A / strong_yes（强烈推荐，今天联系） | {len(a_candidates)}人 | {_fmt_list(a_candidates)} |")
+        lines.append(f"| 🔵 B / yes（值得联系，本周联系） | {len(b_candidates)}人 | {_fmt_list(b_candidates)} |")
+        lines.append(f"| 🟡 C / maybe（备选观察，可选联系） | {len(c_candidates)}人 | {_fmt_list(c_candidates)} |")
+        lines.append(f"| ⚫ no（不推进） | {len(no_candidates)}人 | {_fmt_list(no_candidates)} |")
         lines.append("")
 
-        lines.append("## Top 5 候选人")
-        for idx, candidate in enumerate(candidates[:5], 1):
-            lines.append(
-                f"{idx}. **{self._display_name(candidate)}**｜{self._role_label(candidate)}｜"
-                f"{int(float(candidate.get('total_score', 0) or 0))}分｜"
-                f"{candidate.get('priority', '-')}优先级｜{self._timing_label(candidate.get('action_timing'))}  "
-            )
-            lines.append(f"   核心判断：{self._summary_judgement(candidate)}")
-            lines.append("")
-
-        lines.append(f"## 值得联系（共 {len(contact_candidates)} 人）")
-        for candidate in contact_candidates[:5]:
-            lines.append(
-                f"- {self._display_name(candidate)}｜{self._role_label(candidate)}｜"
-                f"{int(float(candidate.get('total_score', 0) or 0))}分｜{candidate.get('priority', '-')}｜"
-                f"{self._timing_code(candidate.get('action_timing'))}"
-            )
-        if len(contact_candidates) > 5:
-            lines.append("- ……")
+        # ---- Block 4: 今日优先联系 / 本周建议联系 ----
+        lines.append("**今日优先联系：**")
+        if today_candidates:
+            for c in today_candidates:
+                score = int(float(c.get("total_score") or 0))
+                lines.append(f"- **{self._display_name(c)}**（{score}分 / {c.get('priority','')}）：{self._summary_judgement(c)}。风险：{_risk_short(c)}")
+        else:
+            lines.append("- 无")
         lines.append("")
 
-        lines.append(f"## 备选观察（共 {len(maybe_candidates)} 人）")
-        for candidate in maybe_candidates[:5]:
-            lines.append(
-                f"- {self._display_name(candidate)}｜{self._role_label(candidate)}｜"
-                f"{int(float(candidate.get('total_score', 0) or 0))}分｜{candidate.get('priority', '-')}｜"
-                f"{self._timing_code(candidate.get('action_timing'))}"
-            )
-        if len(maybe_candidates) > 5:
-            lines.append("- ……")
+        lines.append("**本周建议联系：**")
+        if this_week_candidates:
+            names = "、".join(self._display_name(c) for c in this_week_candidates)
+            risk_set = []
+            for c in this_week_candidates:
+                risks = c.get("risks", [])
+                if risks:
+                    risk_set.append(self._normalize_risk(risks[0]))
+            deduped = []
+            seen = set()
+            for r in risk_set:
+                if r and r not in seen:
+                    deduped.append(r)
+                    seen.add(r)
+            verify_point = "；".join(deduped[:2]) if deduped else "稳定性与产品 ownership"
+            lines.append(f"{names}（重点核实：{verify_point}）")
+        else:
+            lines.append("- 无")
         lines.append("")
 
-        lines.append("## 主要共性风险")
+        # ---- Block 5: 主要风险提示 ----
+        lines.append("**主要风险提示：**")
         for risk in self._collect_common_risks(candidates):
             lines.append(f"- {risk}")
         lines.append("")
 
-        lines.append("## 建议的下一步")
-        if today_candidates:
-            lines.append("1. 先推进 A 优先级且适合 today 的候选人，尽快完成第一轮触达。")
-        else:
-            lines.append("1. 先确认当前推荐池中最值得优先推进的人选。")
-        if this_week_candidates:
-            lines.append("2. 本周完成 B 类候选人的首轮沟通，重点比较产品职责深度与业务匹配度。")
-        else:
-            lines.append("2. 本周补充完成备选候选人的初筛判断。")
-        lines.append("3. 首轮沟通重点验证：需求拆解能力、真实 ownership、跨团队协作和业务落地深度。")
+        # 元信息
+        lines.append(f"**run_id：** {self.output_dir.name}")
+        lines.append(f"**生成时间：** {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
         return "\n".join(lines).rstrip() + "\n"
 

@@ -51,6 +51,9 @@ def main() -> None:
     )
     owner_summary_path = reporter.save_owner_summary(
         runner_result["json"].get("top_recommendations", []),
+        jd_title=batch_input.get("jd", {}).get("title", "待确认") if isinstance(batch_input.get("jd"), dict) else "待确认",
+        jd_location=batch_input.get("jd", {}).get("location", "待确认") if isinstance(batch_input.get("jd"), dict) else "待确认",
+        jd_salary=batch_input.get("jd", {}).get("salary_range", "待确认") if isinstance(batch_input.get("jd"), dict) else "待确认",
         filename="owner_summary.md",
     )
 
