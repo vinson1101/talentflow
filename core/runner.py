@@ -607,6 +607,16 @@ def _normalize_action(candidate: Dict[str, Any], action: Any) -> Dict[str, Any]:
 
     decision = candidate.get("decision", "maybe")
 
+    # Task 2: decision=no → 强制清除所有联系话术
+    if decision == "no":
+        return {
+            "should_contact": False,
+            "hook_message": "",
+            "verification_question": "",
+            "message_template": "",
+            "deep_questions": [],
+        }
+
     should_contact = action.get("should_contact")
     if not isinstance(should_contact, bool):
         should_contact = decision in {"strong_yes", "yes"}
@@ -663,9 +673,12 @@ def _build_overall_diagnosis(candidates: List[Dict[str, Any]], input_data: Optio
     source_candidates = (input_data or {}).get("candidates", [])
     total_processed = len(source_candidates) if isinstance(source_candidates, list) and source_candidates else len(candidates)
     successful_ingested = total_processed
-    recommended_count = len(candidates)
-    contact_count = sum(1 for candidate in candidates if candidate.get("decision") in {"strong_yes", "yes"})
-    maybe_count = sum(1 for candidate in candidates if candidate.get("decision") == "maybe")
+    # 统计各 decision 分布
+    contact_count = sum(1 for c in candidates if c.get("decision") in {"strong_yes", "yes"})
+    maybe_count = sum(1 for c in candidates if c.get("decision") == "maybe")
+    no_count = sum(1 for c in candidates if c.get("decision") == "no")
+    # 进入推荐池 = strong_yes + yes（只有这两个有明确推进价值）
+    pool_count = contact_count
 
     role_counts: Dict[str, int] = {}
     for candidate in candidates:
@@ -676,9 +689,15 @@ def _build_overall_diagnosis(candidates: List[Dict[str, Any]], input_data: Optio
     role_mix = "、".join(role for role, _ in sorted(role_counts.items(), key=lambda item: (-item[1], item[0]))[:3])
     role_part = f"候选人背景主要来自{role_mix}等相关方向。" if role_mix else ""
 
+    # Task 6: 不用"进入推荐池"，直接说分布
+    if pool_count == 0 and maybe_count > 0 and no_count > 0:
+        return (
+            f"本批共处理{total_processed}份简历，成功解析{successful_ingested}份。"
+            f"建议联系{contact_count}人，备选观察{maybe_count}人，暂不推进{no_count}人。{role_part}"
+        ).strip()
     return (
-        f"本批共处理{total_processed}份简历，成功解析{successful_ingested}份，其中{recommended_count}份进入推荐池；"
-        f"值得联系{contact_count}人，备选观察{maybe_count}人。{role_part}"
+        f"本批共处理{total_processed}份简历，成功解析{successful_ingested}份，其中{pool_count}人进入推荐池；"
+        f"建议联系{contact_count}人，备选观察{maybe_count}人，暂不推进{no_count}人。{role_part}"
     ).strip()
 
 
@@ -1210,7 +1229,17 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
             gated_priority = _apply_template_gates(structured_score, structured_score.get("template_id", ""))
             if gated_priority != "A":
                 model_priority = "B"
-        priority = model_priority
+        # Task 4: decision 与 priority 强绑定
+        if decision == "no":
+            priority = "N"
+        elif decision == "maybe":
+            priority = "C"
+        elif decision == "yes":
+            priority = "B"
+        elif decision == "strong_yes":
+            priority = model_priority  # gate 已验证过 A，保持
+        else:
+            priority = model_priority
 
         action_timing = candidate.get("action_timing")
         if action_timing not in VALID_TIMINGS:
@@ -1327,6 +1356,8 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
         sanitized.append(normalized_candidate)
 
     data["top_recommendations"] = _sort_recommendations(sanitized)
+    # Task 1: 删除 candidates 避免双rank/score；top_recommendations 是唯一来源
+    data.pop("candidates", None)
     data["overall_diagnosis"] = _build_overall_diagnosis(data["top_recommendations"], input_data=input_data)
     data["batch_advice"] = _build_batch_advice(data["top_recommendations"])
     return data

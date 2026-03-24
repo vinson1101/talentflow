@@ -381,7 +381,14 @@ class FinalReporter:
         ]
 
         # ---- Block 2: 批次概览 ----
-        lines.append(f"本批共处理 {stats['total_processed']} 份简历，决策结果：")
+        # Task 8: 批次口径统一，共收到/排除/实际评估
+        # contact_count/maybe_count/no_count computed in Block 3
+        total_received = stats.get("total_received", stats["total_processed"])
+        total_excluded = stats.get("total_excluded", 0)
+        if total_excluded > 0:
+            lines.append(f"本批共收到 {total_received} 份简历，其中 {total_excluded} 份因岗位不匹配已排除，实际评估 {stats['total_processed']} 份。")
+        else:
+            lines.append(f"本批共收到 {stats['total_processed']} 份简历，决策结果：")
         lines.append("")
 
         # ---- Block 3: 分档表 ----
@@ -389,7 +396,7 @@ class FinalReporter:
         lines.append("|---|---:|---|")
         lines.append(f"| 🟢 A / strong_yes（强烈推荐，今天联系） | {len(a_candidates)}人 | {_fmt_list(a_candidates)} |")
         lines.append(f"| 🔵 B / yes（值得联系，本周联系） | {len(b_candidates)}人 | {_fmt_list(b_candidates)} |")
-        lines.append(f"| 🟡 C / maybe（备选观察，可选联系） | {len(c_candidates)}人 | {_fmt_list(c_candidates)} |")
+        lines.append(f"| 🟡 C / maybe（备选观察，暂不推进） | {len(c_candidates)}人 | {_fmt_list(c_candidates)} |")
         lines.append(f"| ⚫ no（不推进） | {len(no_candidates)}人 | {_fmt_list(no_candidates)} |")
         lines.append("")
 
@@ -423,11 +430,41 @@ class FinalReporter:
             lines.append("- 无")
         lines.append("")
 
-        # ---- Block 5: 主要风险提示 ----
+        # ---- Block 5: 主要风险提示（批次级）----
+        # Task 10: 批次级风险，涵盖技能不足型和角色错位型两类
         lines.append("**主要风险提示：**")
-        for risk in self._collect_common_risks(candidates):
+        batch_risks = self._collect_batch_level_risks(candidates)
+        for risk in batch_risks:
             lines.append(f"- {risk}")
         lines.append("")
+
+        # ---- Block 6: 结论 ----
+        # Task 11+12: contact_count/maybe_count 在此处计算
+        contact_count = sum(1 for c in candidates if c.get("decision") in {"strong_yes", "yes"})
+        maybe_count = len([c for c in candidates if c.get("decision") == "maybe"])
+        lines.append("**结论：**")
+        if contact_count == 0 and maybe_count > 0:
+            lines.append(f"- 本批无可直接推进的前端工程师候选人，建议继续搜寻")
+            # Task 12: C档内部优先级
+            if len(c_candidates) >= 2:
+                # 按分数排序，高分在前
+                sorted_c = sorted(c_candidates, key=lambda c: float(c.get("total_score", 0) or 0), reverse=True)
+                top_c = self._display_name(sorted_c[0])
+                second_c = self._display_name(sorted_c[1])
+                lines.append(f"- 如招聘节奏较急，可低优先级观察 {top_c}（分数更高），{second_c} 次之")
+        elif contact_count > 0:
+            lines.append(f"- 建议优先推进 {contact_count} 位 strong_yes/yes 候选人")
+        else:
+            lines.append("- 本批候选人建议继续观察")
+        lines.append("")
+
+        # Task 13: 排除项
+        excluded_list = stats.get("excluded_list", [])
+        if excluded_list:
+            lines.append("**排除项：**")
+            for ex in excluded_list:
+                lines.append(f"- {ex}")
+            lines.append("")
 
         # 元信息
         lines.append(f"**run_id：** {self.output_dir.name}")
@@ -440,14 +477,22 @@ class FinalReporter:
         batch_input_path = self.output_dir / "batch_input.json"
         total_processed = len(candidates)
         successful_ingested = len(candidates)
+        total_received = len(candidates)
+        total_excluded = 0
+        excluded_list: List[str] = []
 
         if batch_input_path.exists():
             try:
                 batch_input = json.loads(batch_input_path.read_text(encoding="utf-8"))
                 source_candidates = batch_input.get("candidates", [])
+                excluded = batch_input.get("excluded", [])
                 if isinstance(source_candidates, list):
                     total_processed = len(source_candidates)
                     successful_ingested = len(source_candidates)
+                if isinstance(excluded, list) and excluded:
+                    total_excluded = len(excluded)
+                    total_received = total_processed + total_excluded
+                    excluded_list = [e.get("file_name", e.get("reason", "未知")) for e in excluded if isinstance(e, dict)]
             except Exception:
                 pass
 
@@ -455,6 +500,9 @@ class FinalReporter:
             "total_processed": total_processed,
             "successful_ingested": successful_ingested,
             "recommended_count": len(candidates),
+            "total_received": total_received,
+            "total_excluded": total_excluded,
+            "excluded_list": excluded_list,
         }
 
     def _display_name(self, candidate: Dict[str, Any]) -> str:
@@ -558,6 +606,44 @@ class FinalReporter:
         if not risks:
             return ["多数简历偏结果摘要，真实职责边界需要在首轮沟通中进一步验证"]
         return risks
+
+    def _collect_batch_level_risks(self, candidates: List[Dict[str, Any]]) -> List[str]:
+        """
+        Task 10: 批次级风险，只返回两类核心风险：
+        1. 技能不足型（无正式经验 / 技能描述弱）
+        2. 角色错位型（实际角色与目标岗位不匹配）
+        每个维度最多1条，去重。
+        """
+        skill_insufficient = None  # 技能不足型
+        role_mismatch = None        # 角色错位型
+        instability = None          # 稳定性问题
+
+        for c in candidates:
+            decision = c.get("decision", "")
+            risks = c.get("risks", [])
+            for risk_raw in risks[:2]:
+                risk = self._normalize_risk(risk_raw).lower()
+                if not risk:
+                    continue
+                # 技能不足型：无经验/无技能/在校为主
+                if not skill_insufficient and any(kw in risk for kw in ["无正式", "无前端", "缺乏", "工程化", "深度不足", "笼统"]):
+                    normalized = self._normalize_risk(risk_raw)
+                    if normalized:
+                        skill_insufficient = normalized
+                # 角色错位型：职位与目标不匹配
+                elif not role_mismatch and any(kw in risk for kw in ["产品经理", "非前端", "ba", "项目经理", "售前", "运营"]):
+                    normalized = self._normalize_risk(risk_raw)
+                    if normalized:
+                        role_mismatch = normalized
+
+        result = []
+        if skill_insufficient:
+            result.append(skill_insufficient)
+        if role_mismatch:
+            result.append(role_mismatch)
+        if not result:
+            result.append("候选人技能与岗位要求存在差距，建议首轮沟通重点核实实际编码能力")
+        return result
 
     def _normalize_risk(self, risk: Any) -> str:
         parsed = _try_parse_dict_like(risk)
