@@ -283,6 +283,14 @@ def build_candidate_records(
         source_platform = src.get("platform", "")
         source_file_name = src.get("file_name", "")
 
+        # resume_link: 飞书直传/云目录文件写入打开链接，非飞书来源则为空
+        resume_link = ""
+        if source_platform == "feishu":
+            file_id = src.get("file_id", "")
+            if file_id:
+                resume_link = f"https://ucn43sn4odey.feishu.cn/drive/{file_id}"
+        # 其他平台（local/dingtalk 等）暂不生成链接
+
         # structured_score
         ss = c.get("structured_score", {})
         ds = ss.get("dimension_scores", {})
@@ -317,6 +325,7 @@ def build_candidate_records(
             "role_label": c.get("role_label", ""),
             "source_platform": source_platform,
             "source_file_name": source_file_name,
+            "resume_link": resume_link,
             # AI 决策主字段
             "rank": c.get("rank", 0),
             "total_score": round(c.get("total_score", 0), 2),
