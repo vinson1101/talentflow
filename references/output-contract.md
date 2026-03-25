@@ -26,6 +26,8 @@
 - `priority`
 - `action_timing`
 - `core_judgement`
+- `match_fit`
+- `recruitability`
 - `reasons`
 - `risks`
 - `structured_score`
@@ -40,6 +42,20 @@
 - `verification_question`
 - `message_template`
 - `deep_questions`
+
+## match_fit 合法枚举
+
+`match_fit` 表示候选人与岗位方向/核心能力的匹配度，必须是：
+- `strong`：岗位方向明确匹配，核心技能基本具备
+- `medium`：岗位方向大致相关，但有缺口或经验深度不足
+- `weak`：岗位方向错误，或核心能力明显缺失
+
+## recruitability 合法枚举
+
+`recruitability` 表示在当前岗位条件下候选人的招聘可达性，必须是：
+- `high`：大概率可推进，薪资/地点/层级等约束基本匹配
+- `medium`：存在阻力，但仍有一定推进可能
+- `low`：在当前条件下明显不易推进（薪资严重不匹配、层级明显过高/过低、地域阻力过大等）
 
 ## decision 合法枚举
 

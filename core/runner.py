@@ -11,6 +11,8 @@ LOG_FILE = "feedback_loop.jsonl"
 VALID_DECISIONS = {"strong_yes", "yes", "maybe", "no"}
 VALID_PRIORITIES = {"A", "B", "C"}
 VALID_TIMINGS = {"today", "this_week", "optional"}
+VALID_MATCH_FITS = {"strong", "medium", "weak"}
+VALID_RECRUITABILITIES = {"high", "medium", "low"}
 PRIORITY_ORDER = {"A": 0, "B": 1, "C": 2}
 TIMING_ORDER = {"today": 0, "this_week": 1, "optional": 2}
 
@@ -763,6 +765,8 @@ def validate_output(output_text: str) -> Dict[str, Any]:
             "priority",
             "action_timing",
             "core_judgement",
+            "match_fit",
+            "recruitability",
         ]
         for field in required_fields:
             if field not in candidate:
@@ -913,6 +917,43 @@ def _find_alias_hits(text: str, canonical: str, aliases: List[str]) -> List[str]
 # ==============================
 # 任务 A & B: 通用语义一致性校正
 # ==============================
+
+# ---------- decision 映射核心 ----------
+def _derive_decision_from_fit_and_recruit(match_fit: str, recruitability: str) -> str:
+    """
+    根据 match_fit × recruitability 映射出最终 decision。
+    映射规则：
+      strong_yes: match_fit=strong  AND recruitability=high
+      yes:        match_fit>=medium AND recruitability>=medium
+      maybe:      (match_fit>=medium AND recruitability=low)
+                  OR (match_fit=weak   AND recruitability>=medium)
+      no:         match_fit=weak      AND recruitability=low
+    """
+    mf = match_fit if match_fit in VALID_MATCH_FITS else "medium"
+    rc = recruitability if recruitability in VALID_RECRUITABILITIES else "medium"
+
+    if mf == "strong" and rc == "high":
+        return "strong_yes"
+    if mf in ("strong", "medium") and rc in ("high", "medium"):
+        return "yes"
+    if mf in ("strong", "medium") and rc == "low":
+        return "maybe"
+    if mf == "weak" and rc in ("high", "medium"):
+        return "maybe"
+    return "no"
+
+
+def _sanitize_match_fit_recruitability(candidate: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    校验 + 规范化 match_fit / recruitability 枚举值。
+    只做校验，不做覆盖；非法值降级为 "medium" / "medium"。
+    """
+    raw_fit = str(candidate.get("match_fit") or "").strip().lower()
+    raw_recruit = str(candidate.get("recruitability") or "").strip().lower()
+    candidate["match_fit"] = raw_fit if raw_fit in VALID_MATCH_FITS else "medium"
+    candidate["recruitability"] = raw_recruit if raw_recruit in VALID_RECRUITABILITIES else "medium"
+    return candidate
+
 
 def _sanitize_action_consistency(candidate: Dict[str, Any], action: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -1406,7 +1447,47 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
             "reasons": reasons,
             "risks": risks,
             "score_breakdown": score_breakdown,
+            # match_fit / recruitability 由后续逻辑规范化后填入
+            "match_fit": str(candidate.get("match_fit") or "").strip().lower(),
+            "recruitability": str(candidate.get("recruitability") or "").strip().lower(),
         }
+
+        # --- decision mapping: match_fit × recruitability → final decision ---
+        normalized_candidate = _sanitize_match_fit_recruitability(normalized_candidate)
+        derived_decision = _derive_decision_from_fit_and_recruit(
+            normalized_candidate.get("match_fit", "medium"),
+            normalized_candidate.get("recruitability", "medium"),
+        )
+        if derived_decision != normalized_candidate["decision"]:
+            normalized_candidate["decision"] = derived_decision
+            normalized_candidate["_decision_overridden"] = True
+            # re-derive priority from corrected decision
+            if derived_decision == "no":
+                normalized_candidate["priority"] = "N"
+            elif derived_decision == "maybe":
+                normalized_candidate["priority"] = "C"
+            elif derived_decision == "yes":
+                normalized_candidate["priority"] = "B"
+            elif derived_decision == "strong_yes":
+                normalized_candidate["priority"] = "A"
+
+        # --- core_judgement 最小一致性清理（仅当 decision 被覆盖时） ---
+        if normalized_candidate.get("_decision_overridden"):
+            cj = normalized_candidate.get("core_judgement") or ""
+            final_d = normalized_candidate["decision"]
+            # 清除 core_judgement 中与最终 decision 矛盾的"建议联系/建议不推进"类表述
+            if final_d == "no" and ("建议联系" in cj or "优先联系" in cj or "值得联系" in cj):
+                normalized_candidate["core_judgement"] = (
+                    f"{candidate_name or '该候选人'}与目标岗位在当前招聘条件下不满足推进条件，"
+                    f"match_fit={normalized_candidate.get('match_fit')}，recruitability={normalized_candidate.get('recruitability')}，不建议推进。"
+                )
+            elif final_d in ("strong_yes", "yes") and ("不建议" in cj or "暂不推进" in cj or "不推荐" in cj):
+                # 弱化为客观描述
+                normalized_candidate["core_judgement"] = (
+                    f"{candidate_name or '该候选人'}综合评分{total_score:.1f}分，"
+                    f"match_fit={normalized_candidate.get('match_fit')}，recruitability={normalized_candidate.get('recruitability')}，建议推进。"
+                )
+
         normalized_candidate["action"] = _normalize_action(normalized_candidate, candidate.get("action"))
 
         # P1 identity conflict check: action fields
