@@ -77,6 +77,8 @@ NAME_REJECT_KEYWORDS = (
     "自我评价",
     "个人优势",
     "求职意向",
+    "从事职业",    # ← 关键修复：这是段落标题，不是姓名
+    "职位名称",
     "基本信息",
     "联系方式",
     # 联系信息
@@ -425,7 +427,9 @@ def _extract_name_from_file_name(file_name: str) -> Optional[str]:
     if not stem:
         return None
 
-    for token in reversed(re.split(r"[_\-\s]+", stem)):
+    # 支持多种文件名格式，包括【web前端 _ 宁波8-13K】胡梦婕 2年
+    # 和带 [] () 【】 （） 等括号分隔符的情况
+    for token in reversed(re.split(r"[_\-\s\[\]（）【】]+", stem)):
         candidate = _sanitize_name_candidate(token)
         if _looks_like_resume_name(candidate):
             return candidate
@@ -546,6 +550,7 @@ def _extract_standalone_name(raw_resume: str) -> Optional[str]:
         "简历", "求职", "应聘", "联系", "电话", "手机", "邮箱", "微信",
         "生日", "出生", "年龄", "性别", "地址", "居住", "户籍",
         "日期", "时间", "年/月", "年.0", "——", "：", "：",
+        "从事职业",    # ← 关键修复：这是段落标题，不是姓名
         "practice", "experience", "education", "skills", "project",
     )
 
