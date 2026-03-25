@@ -272,8 +272,10 @@ TalentFlow 负责：
 
 decision 的含义是"这个人在当前招聘约束下值不值得花一个沟通名额去推进"，而不是"这个人的绝对能力有多强"。
 
-必须同时考虑 match_fit（方向匹配度）和 recruitability（招聘可达性）两个维度：
-- 一个能力强但薪资/层级远超岗位的企业不可达候选人，不应被评为 yes
+必须同时考虑 match_fit（方向匹配度）、recruitability（招聘可达性）和 mismatch_type（错位类型）三个维度：
+- 一个能力强但 mismatch_type=hard_mismatch 的候选人，必须强制评为 no
+- 一个能力中等但 mismatch_type=recoverable 的候选人，可保留为 maybe
+- 一个能力强、match_fit 高、但薪资/层级远超岗位的企业不可达候选人，不应被评为 yes
 - 一个能力中等但现实可达的候选人，可能更值得推进
 
 ### 7.3 排序必须有资源约束意识

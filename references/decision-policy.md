@@ -45,46 +45,61 @@
 
 ## decision 映射规则
 
-`decision = f(match_fit, recruitability)`，由 runner 执行确定性映射：
+### 硬规则 0（最高优先级）：mismatch_type == hard_mismatch → 强制 no
+
+**无论 match_fit 和 recruitability 多强，只要 mismatch_type=hard_mismatch，runner 必须强制覆盖 decision=no，并同步：**
+- `priority = N`
+- `action_timing = optional`
+- `should_contact = false`
+- 清空所有外联文案（hook_message / verification_question / message_template / deep_questions）
+
+### 软规则：match_fit × recruitability mapping
+
+在 hard_mismatch 守门之后，runner 执行确定性映射：
 
 | match_fit | recruitability | decision |
 |-----------|---------------|----------|
 | `strong` | `high` | `strong_yes` |
 | `strong` / `medium` | `high` / `medium` | `yes` |
 | `medium` | `low` | `maybe` |
-| `weak` | `high` / `medium` | `maybe` |
+| `weak` | `high` / `medium` + mismatch_type=recoverable | `maybe` |
+| `weak` | `high` / `medium` + mismatch_type=none | `maybe` |
 | `weak` | `low` | `no` |
+| `weak` | `high` / `medium` + mismatch_type=hard_mismatch | ~~maybe~~ → **no**（被硬规则拦截）|
 
 简化版：
-- **strong_yes**：match_fit=strong **且** recruitability=high
-- **yes**：match_fit ≥ medium **且** recruitability ≥ medium
-- **maybe**：一边还行，另一边明显阻力（见上表两种情形）
-- **no**：match_fit=weak **且** recruitability=low，或命中硬规则
+- **strong_yes**：match_fit=strong **且** recruitability=high（且非 hard_mismatch）
+- **yes**：match_fit ≥ medium **且** recruitability ≥ medium（且非 hard_mismatch）
+- **maybe**：一边还行，另一边明显阻力（仅当 mismatch_type=none/recoverable 时成立）
+- **no**：match_fit=weak **且** recruitability=low，**或** mismatch_type=hard_mismatch
 
 ---
 
 ## 硬规则（必须遵守）
 
-### 硬规则 1：方向明显不匹配 → no
+### 硬规则 1：mismatch_type = hard_mismatch → 强制 no
 
-如果候选人与岗位方向明显不匹配（如求职方向错误、核心技能缺失、实际履历属于另一类岗位），则：
+如果候选人与岗位存在方向性根本错位，则 `mismatch_type=hard_mismatch`，runner 必须强制覆盖 decision=no。
 
-```
-match_fit = weak
-decision = no
-```
+典型场景：
+- 求职意向明确是另一岗位线（候选人求职产品，JD 是前端）
+- 核心职业经历明显属于另一岗位（候选人 3 年 Java 后端，JD 是前端）
+- 主要技能与 JD 核心要求完全无关
 
-不得因为候选人"总体素质不错"就保留为 yes。
+不得因候选人"总体素质不错"或"recruitability=high"而绕过此规则。
 
-### 硬规则 2：明显不可达 → 不允许进入 yes
+### 硬规则 2：mismatch_type = recoverable 时，weak 保留 maybe
 
-如果候选人明显不符合当前岗位现实约束（薪资远高于岗位上限、层级明显高于企业可承接范围、地点约束明显不符且无迁移可能），则：
+如果 mismatch_type=recoverable，表示候选人方向相关但经验不足，此时：
+- weak + high/medium → maybe（而非直接 no）
+- recoverable 的典型场景：
+  - 岗位方向相关，但经验浅
+  - 技能覆盖不完整，但已有相关项目
+  - 核心路径一致，只是深度不够
 
-```
-recruitability = low
-```
+### 硬规则 3：方向明显不可达 → 不允许进入 yes
 
-此时最多 maybe，不允许进入 yes。
+如果候选人明显不符合当前岗位现实约束（薪资严重超出岗位上限、层级明显过高/过低、地点约束明显不符且无迁移可能），则 `recruitability=low`，此时最多 maybe，不允许进入 yes。
 
 ---
 

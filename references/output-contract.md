@@ -28,6 +28,7 @@
 - `core_judgement`
 - `match_fit`
 - `recruitability`
+- `mismatch_type`
 - `reasons`
 - `risks`
 - `structured_score`
@@ -42,6 +43,13 @@
 - `verification_question`
 - `message_template`
 - `deep_questions`
+
+## mismatch_type 合法枚举
+
+`mismatch_type` 表示候选人与岗位的错位类型，必须是：
+- `none`：不存在明显错位，岗位方向基本一致
+- `recoverable`：有缺口但方向仍相关，存在培养/补位价值
+- `hard_mismatch`：方向明显错误，或核心技能缺失到不值得推进
 
 ## match_fit 合法枚举
 

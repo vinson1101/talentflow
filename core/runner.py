@@ -13,6 +13,7 @@ VALID_PRIORITIES = {"A", "B", "C"}
 VALID_TIMINGS = {"today", "this_week", "optional"}
 VALID_MATCH_FITS = {"strong", "medium", "weak"}
 VALID_RECRUITABILITIES = {"high", "medium", "low"}
+VALID_MISMATCH_TYPES = {"none", "recoverable", "hard_mismatch"}
 PRIORITY_ORDER = {"A": 0, "B": 1, "C": 2}
 TIMING_ORDER = {"today": 0, "this_week": 1, "optional": 2}
 
@@ -777,10 +778,18 @@ def validate_output(output_text: str) -> Dict[str, Any]:
             "core_judgement",
             "match_fit",
             "recruitability",
+            "mismatch_type",
         ]
         for field in required_fields:
             if field not in candidate:
                 raise ValueError(f"❌ recommendation[{index}] missing {field}")
+
+        # mismatch_type 枚举校验
+        if candidate.get("mismatch_type") not in VALID_MISMATCH_TYPES:
+            raise ValueError(
+                f"❌ recommendation[{index}].mismatch_type must be one of {VALID_MISMATCH_TYPES}, "
+                f"got: {candidate.get('mismatch_type')}"
+            )
 
         if "action" in candidate and not isinstance(candidate["action"], dict):
             raise ValueError(f"❌ recommendation[{index}].action must be object")
@@ -955,13 +964,43 @@ def _derive_decision_from_fit_and_recruit(match_fit: str, recruitability: str) -
 
 def _sanitize_match_fit_recruitability(candidate: Dict[str, Any]) -> Dict[str, Any]:
     """
-    校验 + 规范化 match_fit / recruitability 枚举值。
-    只做校验，不做覆盖；非法值降级为 "medium" / "medium"。
+    校验 + 规范化 match_fit / recruitability / mismatch_type 枚举值。
+    - 非法枚举值降级为默认值（match_fit→medium, recruitability→medium, mismatch_type→none）
+    - 此函数只做校验，不做覆盖决策
     """
     raw_fit = str(candidate.get("match_fit") or "").strip().lower()
     raw_recruit = str(candidate.get("recruitability") or "").strip().lower()
+    raw_mismatch = str(candidate.get("mismatch_type") or "").strip().lower()
     candidate["match_fit"] = raw_fit if raw_fit in VALID_MATCH_FITS else "medium"
     candidate["recruitability"] = raw_recruit if raw_recruit in VALID_RECRUITABILITIES else "medium"
+    candidate["mismatch_type"] = raw_mismatch if raw_mismatch in VALID_MISMATCH_TYPES else "none"
+    return candidate
+
+
+def _apply_hard_mismatch_guard(candidate: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    硬规则守门：mismatch_type == hard_mismatch 时，强制压 decision=no。
+    同时收敛：
+    - priority = N
+    - action_timing = optional
+    - should_contact = false
+    - 清空所有外联文案
+    """
+    if candidate.get("mismatch_type") != "hard_mismatch":
+        return candidate
+
+    candidate["decision"] = "no"
+    candidate["priority"] = "N"
+    candidate["action_timing"] = "optional"
+
+    action = candidate.get("action") or {}
+    action["should_contact"] = False
+    action["hook_message"] = ""
+    action["verification_question"] = ""
+    action["message_template"] = ""
+    action["deep_questions"] = []
+    candidate["action"] = action
+
     return candidate
 
 
@@ -1477,9 +1516,10 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
             "reasons": reasons,
             "risks": risks,
             "score_breakdown": score_breakdown,
-            # match_fit / recruitability 由后续逻辑规范化后填入
+            # match_fit / recruitability / mismatch_type 由后续逻辑规范化后填入
             "match_fit": str(candidate.get("match_fit") or "").strip().lower(),
             "recruitability": str(candidate.get("recruitability") or "").strip().lower(),
+            "mismatch_type": str(candidate.get("mismatch_type") or "").strip().lower(),
         }
 
         # --- decision mapping: match_fit × recruitability → final decision ---
@@ -1519,6 +1559,9 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
                 )
 
         normalized_candidate["action"] = _normalize_action(normalized_candidate, candidate.get("action"))
+
+        # --- 硬规则守门：hard_mismatch 强制压 decision=no（任何场景都覆盖，在 decision mapping 之后执行）---
+        normalized_candidate = _apply_hard_mismatch_guard(normalized_candidate)
 
         # P1 identity conflict check: action fields
         action = normalized_candidate["action"]
