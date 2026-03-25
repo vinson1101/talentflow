@@ -185,11 +185,12 @@ class FinalReporter:
         jd_salary: str = "待确认",
         filename: str = "owner_summary.md",
     ) -> Path:
+        # JD 信息透传到 owner_summary，确保标题不显示"待确认"
         summary = self.generate_owner_summary(
             candidates,
-            jd_title=jd_title,
-            jd_location=jd_location,
-            jd_salary=jd_salary,
+            jd_title=jd_title or "待确认",
+            jd_location=jd_location or "待确认",
+            jd_salary=jd_salary or "待确认",
         )
         summary_path = self.output_dir / filename
         with open(summary_path, "w", encoding="utf-8") as handle:

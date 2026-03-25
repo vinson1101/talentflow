@@ -125,7 +125,17 @@ def _build_candidate_lookup(input_data: Dict[str, Any]) -> Dict[str, Dict[str, A
             candidate_id = _clean_text(candidate.get(key))
             if candidate_id:
                 lookup[candidate_id] = candidate
-    return lookup
+
+    # 备用 name-based 索引：当 candidate_id 不匹配时，通过姓名兜底
+    name_lookup: Dict[str, Dict[str, Any]] = {}
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        name = _clean_text(candidate.get("name"))
+        if name:
+            name_lookup[name] = candidate
+
+    return lookup, name_lookup
 
 
 def _split_identifier_tokens(value: str) -> List[str]:
@@ -1325,7 +1335,7 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
     data.setdefault("batch_advice", "")
     data["batch_advice"] = _clean_text(data.get("batch_advice"))
 
-    candidate_lookup = _build_candidate_lookup(input_data or {})
+    candidate_lookup, name_lookup = _build_candidate_lookup(input_data or {})
     recommendations = data.get("top_recommendations", [])
     sanitized: List[Dict[str, Any]] = []
 
@@ -1334,7 +1344,27 @@ def sanitize_output(data: Dict[str, Any], input_data: Optional[Dict[str, Any]] =
             candidate = {}
 
         candidate_id = _clean_text(candidate.get("candidate_id")) or f"unknown_{index}"
-        source_candidate = candidate_lookup.get(candidate_id, {})
+        source_candidate = candidate_lookup.get(candidate_id)
+
+        # candidate_id 不匹配时（模型输出的 ID 与 ingested id 格式不一致），
+        # 用姓名做多级兜底匹配：
+        #   1. 先用模型输出原始 candidate_name / name 字段
+        #   2. 若仍为空，再用 _extract_candidate_name 规范化后的名字
+        # 保证 structured_score 等原始字段能正确合并到对应候选人
+        if not source_candidate:
+            # 级别1：从模型输出原始字段取值（最直接）
+            raw_name = _clean_text(
+                candidate.get("candidate_name") or candidate.get("name") or ""
+            )
+            if raw_name and raw_name in name_lookup:
+                source_candidate = name_lookup[raw_name]
+
+            # 级别2：若级别1仍失败，尝试用 _extract_candidate_name 规范化后的名字
+            # 这会触发重新从 core_judgement 中提名字
+            if not source_candidate:
+                extracted_name = _extract_candidate_name(candidate, {})
+                if extracted_name and extracted_name in name_lookup:
+                    source_candidate = name_lookup[extracted_name]
 
         # P5: 处理 structured_score（7维评分体系）
         # 会重算 weighted_total 并覆盖 candidate["total_score"]
