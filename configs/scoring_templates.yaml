@@ -74,6 +74,50 @@ templates:
       min_willingness_for_a: 40
       min_experience_for_a: 50
 
+  # ===== 商务/销售序列 =====
+  senior_sales_director:
+    description: 销售总监 / 大客户总监（北美/跨境）
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+
+  sales_director_b2b:
+    description: B2B销售总监 / 行业销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 20
+      innovation_potential: 10
+      execution_goal_breakdown: 20
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+
+  key_account_manager:
+    description: 大客户销售经理 / 客户经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 20
+      innovation_potential: 10
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 45
+      min_willingness_for_a: 40
+
 template_selection:
   - when:
       jd_title_contains_any: ["高级产品经理"]
@@ -95,6 +139,19 @@ template_selection:
       candidate_role_contains_any: ["项目经理", "实施工程师", "解决方案工程师", "顾问"]
     use: transition_to_product
 
+  # 商务/销售序列
+  - when:
+      jd_title_contains_any: ["销售总监", "Sales Director", "大客户总监", "渠道总监", "商务总监"]
+    use: senior_sales_director
+
+  - when:
+      jd_title_contains_any: ["大客户经理", "客户经理", "Key Account", "KA经理", "行业销售"]
+    use: key_account_manager
+
+  - when:
+      jd_title_contains_any: ["销售经理", "销售主管", "Sales Manager"]
+    use: sales_director_b2b
+
 industry_adjustments:
   healthcare:
     add:
@@ -113,3 +170,17 @@ industry_adjustments:
       execution_goal_breakdown: 5
       team_fit: 5
       innovation_potential: -5
+
+  automotive:
+    add:
+      hard_skill_match: 10
+      experience_depth: 5
+      stability: 5
+      innovation_potential: -5
+      willingness: -5
+
+  north_america_based:
+    add:
+      willingness: 10
+      stability: 5
+      hard_skill_match: -5
