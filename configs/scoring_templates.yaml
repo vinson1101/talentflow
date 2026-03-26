@@ -1,277 +1,28 @@
 version: v2
-
-default_template: b2b_product_general
-
+default_template: internet_product_manager
 templates:
-
-  # ═══════════════════════════════════════════════
-  # 【序列：产品】
-  # ═══════════════════════════════════════════════
-
-  # — 互联网/科技
-  tech_product_manager:
-    description: 科技/互联网 产品经理 | 增长/平台/创新型产品
+  internet_product_manager:
+    description: 互联网 产品经理
     weights:
       hard_skill_match: 25
-      experience_depth: 20
+      experience_depth: 25
       innovation_potential: 25
       execution_goal_breakdown: 15
       team_fit: 5
       willingness: 5
       stability: 5
-    gates:
-      min_hard_skill_for_a: 50
-      min_willingness_for_a: 40
-
-  tech_senior_product:
-    description: 科技/互联网 高级产品经理 | 复杂业务/0-1/创新
-    weights:
-      hard_skill_match: 30
-      experience_depth: 25
-      innovation_potential: 20
-      execution_goal_breakdown: 10
-      team_fit: 5
-      willingness: 5
-      stability: 5
+      note: 各行业权重因特点不同
     gates:
       min_hard_skill_for_a: 55
       min_willingness_for_a: 40
       min_experience_for_a: 50
-
-  # — 金融/游戏
-  fintech_product_manager:
-    description: 金融/游戏 产品经理 | 合规/交易/机构产品
-    weights:
-      hard_skill_match: 30
-      experience_depth: 25
-      innovation_potential: 10
-      execution_goal_breakdown: 15
-      team_fit: 10
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 55
-      min_willingness_for_a: 40
-      min_experience_for_a: 50
-
-  # — 汽车/制造
-  auto_product_manager:
-    description: 汽车/制造 产品经理 | 供应链/制造业/项目交付
-    weights:
-      hard_skill_match: 30
-      experience_depth: 25
-      innovation_potential: 10
-      execution_goal_breakdown: 20
-      team_fit: 5
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 50
-      min_willingness_for_a: 40
-      min_experience_for_a: 45
-
-  # — 消费/商业
-  consumer_product_manager:
-    description: 消费品/零售 产品经理 | 渠道/品牌/消费者洞察
-    weights:
-      hard_skill_match: 25
-      experience_depth: 20
-      innovation_potential: 20
-      execution_goal_breakdown: 20
-      team_fit: 5
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 45
-      min_willingness_for_a: 40
-
-  # — 战略/新兴（医疗/能源/农业）
-  emerging_product_manager:
-    description: 医疗/能源/新兴行业 产品经理 | 政策敏感/研发驱动
-    weights:
-      hard_skill_match: 30
-      experience_depth: 25
-      innovation_potential: 15
-      execution_goal_breakdown: 15
-      team_fit: 5
-      willingness: 10
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 55
-      min_willingness_for_a: 45
-      min_experience_for_a: 50
-
-  # ═══════════════════════════════════════════════
-  # 【序列：研发/技术】
-  # ═══════════════════════════════════════════════
-
-  tech_rd_engineer:
-    description: 科技/互联网 研发工程师 | 算法/架构/增长技术
-    weights:
-      hard_skill_match: 35
-      experience_depth: 20
-      innovation_potential: 20
-      execution_goal_breakdown: 15
-      team_fit: 5
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 55
-      min_willingness_for_a: 40
-
-  fintech_rd_engineer:
-    description: 金融/游戏 研发工程师 | 高并发/交易系统/安全
-    weights:
-      hard_skill_match: 35
-      experience_depth: 25
-      innovation_potential: 10
-      execution_goal_breakdown: 15
-      team_fit: 5
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 55
-      min_willingness_for_a: 40
-      min_experience_for_a: 50
-
-  auto_rd_engineer:
-    description: 汽车/制造 研发工程师 | 嵌入式/硬件/工艺
-    weights:
-      hard_skill_match: 35
-      experience_depth: 25
-      innovation_potential: 10
-      execution_goal_breakdown: 15
-      team_fit: 5
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 50
-      min_willingness_for_a: 40
-      min_experience_for_a: 50
-
-  # ═══════════════════════════════════════════════
-  # 【序列：运营】
-  # ═══════════════════════════════════════════════
-
-  tech_ops_manager:
-    description: 科技/互联网 运营经理 | 增长运营/用户运营/内容运营
-    weights:
-      hard_skill_match: 25
-      experience_depth: 20
-      innovation_potential: 20
-      execution_goal_breakdown: 20
-      team_fit: 5
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 45
-      min_willingness_for_a: 40
-
-  fintech_ops_manager:
-    description: 金融/游戏 运营经理 | 合规运营/风险运营/客户服务
-    weights:
-      hard_skill_match: 25
-      experience_depth: 25
-      innovation_potential: 10
-      execution_goal_breakdown: 20
-      team_fit: 10
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 50
-      min_willingness_for_a: 40
-      min_experience_for_a: 50
-
-  auto_ops_manager:
-    description: 汽车/制造 运营经理 | 供应链运营/生产管理/质量运营
-    weights:
-      hard_skill_match: 30
-      experience_depth: 25
-      innovation_potential: 10
-      execution_goal_breakdown: 20
-      team_fit: 5
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 50
-      min_willingness_for_a: 40
-      min_experience_for_a: 45
-
-  # ═══════════════════════════════════════════════
-  # 【序列：商务/销售】
-  # ═══════════════════════════════════════════════
-
-  tech_sales_director:
-    description: 科技/互联网 销售总监 | toB大客户/渠道管理
-    weights:
-      hard_skill_match: 30
-      experience_depth: 25
-      innovation_potential: 10
-      execution_goal_breakdown: 15
-      team_fit: 5
-      willingness: 10
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 55
-      min_willingness_for_a: 45
-      min_experience_for_a: 50
-
-  senior_sales_director:
-    description: 汽车/金融 销售总监 | 北美大客户/战略合作
-    weights:
-      hard_skill_match: 30
-      experience_depth: 25
-      innovation_potential: 10
-      execution_goal_breakdown: 15
-      team_fit: 5
-      willingness: 10
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 55
-      min_willingness_for_a: 45
-      min_experience_for_a: 50
-
-  consumer_sales_director:
-    description: 消费品/零售 销售总监 | 渠道拓展/品牌代理/经销商管理
-    weights:
-      hard_skill_match: 25
-      experience_depth: 25
-      innovation_potential: 10
-      execution_goal_breakdown: 25
-      team_fit: 5
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 50
-      min_willingness_for_a: 40
-      min_experience_for_a: 45
-
-  # ═══════════════════════════════════════════════
-  # 【序列：职能（HR/财务/法务）】
-  # ═══════════════════════════════════════════════
-
-  tech_hr_director:
-    description: 科技/互联网 HR总监 | 组织发展/文化/COE
-    weights:
-      hard_skill_match: 25
-      experience_depth: 25
-      innovation_potential: 20
-      execution_goal_breakdown: 15
-      team_fit: 10
-      willingness: 5
-      stability: 5
-    gates:
-      min_hard_skill_for_a: 50
-      min_willingness_for_a: 40
-      min_experience_for_a: 50
-
-  fintech_finance_director:
-    description: 金融/游戏 财务总监 | 风险管理/合规/投资者关系
+  internet_senior_product:
+    description: 互联网 高级产品经理
     weights:
       hard_skill_match: 30
       experience_depth: 30
-      innovation_potential: 5
-      execution_goal_breakdown: 15
+      innovation_potential: 20
+      execution_goal_breakdown: 10
       team_fit: 5
       willingness: 5
       stability: 5
@@ -279,180 +30,1334 @@ templates:
       min_hard_skill_for_a: 60
       min_willingness_for_a: 40
       min_experience_for_a: 55
-
-
-# ═══════════════════════════════════════════════
-# 模板选择规则
-# 优先级：行业+职位双重匹配 > 纯职位匹配 > 候选人角色匹配
-# ═══════════════════════════════════════════════
-
-template_selection:
-
-  # — 产品序列 —
-
-  # 互联网/科技 × 产品
-  - when:
-      jd_industry_contains_any: ["互联网", "人工智能", "芯片半导体", "软件"]
-      jd_title_contains_any: ["高级产品经理", "资深产品经理"]
-    use: tech_senior_product
-
-  - when:
-      jd_industry_contains_any: ["互联网", "人工智能", "芯片半导体", "软件"]
-      jd_title_contains_any: ["产品经理", "产品负责人"]
-    use: tech_product_manager
-
-  # 金融/游戏 × 产品
-  - when:
-      jd_industry_contains_any: ["金融", "游戏", "咨询服务"]
-      jd_title_contains_any: ["产品经理", "高级产品经理"]
-    use: fintech_product_manager
-
-  # 汽车/制造 × 产品
-  - when:
-      jd_industry_contains_any: ["汽车", "智能制造", "大基建", "化工材料", "物流"]
-      jd_title_contains_any: ["产品经理", "产品工程师"]
-    use: auto_product_manager
-
-  # 消费品 × 产品
-  - when:
-      jd_industry_contains_any: ["消费品", "文旅", "消费电子"]
-      jd_title_contains_any: ["产品经理", "品牌产品"]
-    use: consumer_product_manager
-
-  # 医疗/能源/新兴 × 产品
-  - when:
-      jd_industry_contains_any: ["大健康", "能源环保农业"]
-      jd_title_contains_any: ["产品经理", "高级产品经理"]
-    use: emerging_product_manager
-
-  # — 研发序列 —
-
-  - when:
-      jd_industry_contains_any: ["互联网", "人工智能", "软件"]
-      jd_title_contains_any: ["研发", "工程师", "算法", "架构师", "开发"]
-    use: tech_rd_engineer
-
-  - when:
-      jd_industry_contains_any: ["金融", "游戏"]
-      jd_title_contains_any: ["研发", "工程师", "量化", "交易系统"]
-    use: fintech_rd_engineer
-
-  - when:
-      jd_industry_contains_any: ["汽车", "智能制造", "芯片半导体"]
-      jd_title_contains_any: ["研发", "工程师", "硬件", "嵌入式", "工艺"]
-    use: auto_rd_engineer
-
-  # — 运营序列 —
-
-  - when:
-      jd_industry_contains_any: ["互联网", "人工智能", "软件"]
-      jd_title_contains_any: ["运营", "增长", "用户运营", "内容运营"]
-    use: tech_ops_manager
-
-  - when:
-      jd_industry_contains_any: ["金融", "游戏"]
-      jd_title_contains_any: ["运营", "合规运营", "风险运营", "客服"]
-    use: fintech_ops_manager
-
-  - when:
-      jd_industry_contains_any: ["汽车", "智能制造", "物流"]
-      jd_title_contains_any: ["运营", "供应链运营", "生产运营", "质量运营"]
-    use: auto_ops_manager
-
-  # — 商务/销售序列 —
-
-  - when:
-      jd_industry_contains_any: ["互联网", "人工智能", "软件"]
-      jd_title_contains_any: ["销售总监", "商务总监", "渠道总监", "Sales Director"]
-    use: tech_sales_director
-
-  - when:
-      jd_industry_contains_any: ["汽车", "智能制造", "金融"]
-      jd_title_contains_any: ["销售总监", "大客户总监", "Sales Director"]
-    use: senior_sales_director
-
-  - when:
-      jd_industry_contains_any: ["消费品", "文旅", "物流"]
-      jd_title_contains_any: ["销售总监", "渠道总监", "代理", "经销商"]
-    use: consumer_sales_director
-
-  # — 职能序列 —
-
-  - when:
-      jd_industry_contains_any: ["互联网", "人工智能", "软件"]
-      jd_title_contains_any: ["HR总监", "人力资源总监", "组织发展", "HRD"]
-    use: tech_hr_director
-
-  - when:
-      jd_industry_contains_any: ["金融", "游戏"]
-      jd_title_contains_any: ["财务总监", "CFO", "风控总监", "合规总监"]
-    use: fintech_finance_director
-
-  # — 通用兜底（无行业信息时）—
-
-  - when:
-      jd_title_contains_any: ["高级产品经理", "资深产品经理", "产品专家"]
-    use: tech_senior_product
-
-  - when:
-      jd_title_contains_any: ["产品经理", "B端产品", "C端产品", "产品负责人"]
-    use: b2b_product_general
-
-  - when:
-      jd_title_contains_any: ["研发", "工程师", "开发", "算法"]
-    use: tech_rd_engineer
-
-  - when:
-      jd_title_contains_any: ["销售总监", "大客户总监", "Sales Director", "商务总监"]
-    use: senior_sales_director
-
-  - when:
-      jd_title_contains_any: ["运营", "增长", "用户运营"]
-    use: tech_ops_manager
-
-  - when:
-      jd_title_contains_any: ["产品助理", "校招", "应届"]
-    use: campus_product
-
-  - when:
-      candidate_role_contains_any: ["项目经理", "实施工程师", "解决方案"]
-    use: transition_to_product
-
-# ═══════════════════════════════════════════════
-# 行业调整参数
-# ═══════════════════════════════════════════════
-
-industry_adjustments:
-
-  automotive:
-    add:
-      hard_skill_match: 10
-      experience_depth: 5
+  internet_rd_engineer:
+    description: 互联网 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
       stability: 5
-      innovation_potential: -5
-      willingness: -5
-
-  north_america_based:
-    add:
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  internet_ops_manager:
+    description: 互联网 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  internet_sales_director:
+    description: 互联网 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
       willingness: 10
       stability: 5
-      hard_skill_match: -5
-
-  healthcare:
-    add:
-      hard_skill_match: 5
-      experience_depth: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  internet_hr_director:
+    description: 互联网 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
       stability: 5
-
-  innovation_heavy:
-    add:
-      innovation_potential: 5
-      execution_goal_breakdown: 5
-      experience_depth: -5
-      stability: -5
-
-  delivery_heavy:
-    add:
-      execution_goal_breakdown: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  ai_product_manager:
+    description: 人工智能 产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 25
+      execution_goal_breakdown: 15
       team_fit: 5
-      innovation_potential: -5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  ai_senior_product:
+    description: 人工智能 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  ai_rd_engineer:
+    description: 人工智能 研发工程师
+    weights:
+      hard_skill_match: 40
+      experience_depth: 25
+      innovation_potential: 20
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 65
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  ai_ops_manager:
+    description: 人工智能 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  ai_sales_director:
+    description: 人工智能 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  ai_hr_director:
+    description: 人工智能 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  semiconductor_product_manager:
+    description: 芯片半导体 产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  semiconductor_senior_product:
+    description: 芯片半导体 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  semiconductor_rd_engineer:
+    description: 芯片半导体 研发工程师
+    weights:
+      hard_skill_match: 40
+      experience_depth: 30
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 65
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  semiconductor_ops_manager:
+    description: 芯片半导体 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  semiconductor_sales_director:
+    description: 芯片半导体 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  semiconductor_hr_director:
+    description: 芯片半导体 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  finance_product_manager:
+    description: 金融 产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  finance_senior_product:
+    description: 金融 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  finance_rd_engineer:
+    description: 金融 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  finance_ops_manager:
+    description: 金融 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  finance_sales_director:
+    description: 金融 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  finance_hr_director:
+    description: 金融 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  gaming_product_manager:
+    description: 游戏 产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 25
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  gaming_senior_product:
+    description: 游戏 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  gaming_rd_engineer:
+    description: 游戏 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  gaming_ops_manager:
+    description: 游戏 运营经理
+    weights:
+      hard_skill_match: 20
+      experience_depth: 25
+      innovation_potential: 20
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  gaming_sales_director:
+    description: 游戏 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  gaming_hr_director:
+    description: 游戏 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  consulting_product_manager:
+    description: 咨询服务 产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  consulting_senior_product:
+    description: 咨询服务 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  consulting_rd_engineer:
+    description: 咨询服务 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  consulting_ops_manager:
+    description: 咨询服务 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  consulting_sales_director:
+    description: 咨询服务 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  consulting_hr_director:
+    description: 咨询服务 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  automotive_product_manager:
+    description: 汽车 产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  automotive_senior_product:
+    description: 汽车 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  automotive_rd_engineer:
+    description: 汽车 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  automotive_ops_manager:
+    description: 汽车 运营经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 5
+      execution_goal_breakdown: 30
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  automotive_sales_director:
+    description: 汽车 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  automotive_hr_director:
+    description: 汽车 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  manufacturing_product_manager:
+    description: 智能制造 产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  manufacturing_senior_product:
+    description: 智能制造 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  manufacturing_rd_engineer:
+    description: 智能制造 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  manufacturing_ops_manager:
+    description: 智能制造 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  manufacturing_sales_director:
+    description: 智能制造 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  manufacturing_hr_director:
+    description: 智能制造 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  infrastructure_product_manager:
+    description: 大基建 产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 35
+      innovation_potential: 15
+      execution_goal_breakdown: 20
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 60
+  infrastructure_senior_product:
+    description: 大基建 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  infrastructure_rd_engineer:
+    description: 大基建 研发工程师
+    weights:
+      hard_skill_match: 40
+      experience_depth: 35
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 60
+  infrastructure_ops_manager:
+    description: 大基建 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  infrastructure_sales_director:
+    description: 大基建 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  infrastructure_hr_director:
+    description: 大基建 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  chemical_product_manager:
+    description: 化工材料 产品经理
+    weights:
+      hard_skill_match: 40
+      experience_depth: 35
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 65
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  chemical_senior_product:
+    description: 化工材料 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  chemical_rd_engineer:
+    description: 化工材料 研发工程师
+    weights:
+      hard_skill_match: 40
+      experience_depth: 35
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 65
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  chemical_ops_manager:
+    description: 化工材料 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  chemical_sales_director:
+    description: 化工材料 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  chemical_hr_director:
+    description: 化工材料 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  culture_product_manager:
+    description: 文旅 产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  culture_senior_product:
+    description: 文旅 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  culture_rd_engineer:
+    description: 文旅 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  culture_ops_manager:
+    description: 文旅 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  culture_sales_director:
+    description: 文旅 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  culture_hr_director:
+    description: 文旅 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  consumer_product_manager:
+    description: 消费品 产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  consumer_senior_product:
+    description: 消费品 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  consumer_rd_engineer:
+    description: 消费品 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  consumer_ops_manager:
+    description: 消费品 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  consumer_sales_director:
+    description: 消费品 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  consumer_hr_director:
+    description: 消费品 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  education_product_manager:
+    description: 教育 产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  education_senior_product:
+    description: 教育 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  education_rd_engineer:
+    description: 教育 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  education_ops_manager:
+    description: 教育 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  education_sales_director:
+    description: 教育 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  education_hr_director:
+    description: 教育 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  healthcare_product_manager:
+    description: 大健康 产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  healthcare_senior_product:
+    description: 大健康 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  healthcare_rd_engineer:
+    description: 大健康 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  healthcare_ops_manager:
+    description: 大健康 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  healthcare_sales_director:
+    description: 大健康 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  healthcare_hr_director:
+    description: 大健康 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  energy_product_manager:
+    description: 能源环保农业 产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  energy_senior_product:
+    description: 能源环保农业 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  energy_rd_engineer:
+    description: 能源环保农业 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  energy_ops_manager:
+    description: 能源环保农业 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  energy_sales_director:
+    description: 能源环保农业 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  energy_hr_director:
+    description: 能源环保农业 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  logistics_product_manager:
+    description: 物流 产品经理
+    weights:
+      hard_skill_match: 30
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+      note: 各行业权重因特点不同
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  logistics_senior_product:
+    description: 物流 高级产品经理
+    weights:
+      hard_skill_match: 35
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 10
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 60
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
+  logistics_rd_engineer:
+    description: 物流 研发工程师
+    weights:
+      hard_skill_match: 35
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  logistics_ops_manager:
+    description: 物流 运营经理
+    weights:
+      hard_skill_match: 25
+      experience_depth: 25
+      innovation_potential: 15
+      execution_goal_breakdown: 25
+      team_fit: 5
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 50
+  logistics_sales_director:
+    description: 物流 销售总监
+    weights:
+      hard_skill_match: 30
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 5
+      willingness: 10
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 55
+      min_willingness_for_a: 45
+      min_experience_for_a: 50
+  logistics_hr_director:
+    description: 物流 HR总监
+    weights:
+      hard_skill_match: 25
+      experience_depth: 30
+      innovation_potential: 10
+      execution_goal_breakdown: 15
+      team_fit: 15
+      willingness: 5
+      stability: 5
+    gates:
+      min_hard_skill_for_a: 50
+      min_willingness_for_a: 40
+      min_experience_for_a: 55
