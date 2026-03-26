@@ -6,6 +6,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .sequence_identifier import identify_sequence
+
 LOG_FILE = "feedback_loop.jsonl"
 
 VALID_DECISIONS = {"strong_yes", "yes", "maybe", "no"}
@@ -1144,45 +1146,34 @@ def _select_scoring_template(
     input_data: Dict[str, Any],
 ) -> str:
     """
-    根据 JD 信息 / 候选人角色选择模板 ID。
-    优先级：JD行业+职位双重命中 > JD职位命中 > 候选人角色命中 > default_template
+    根据 JD 标题自动识别序列，选择对应模板。
 
-    template_selection 支持三组条件：
-    - jd_title_contains_any: JD 标题关键词（与或关系）
-    - jd_industry_contains_any: JD 所在行业关键词（需结合职位条件）
-    - candidate_role_contains_any: 候选人现职位关键词
+    识别逻辑（sequence_identifier.py）：
+    1. 直接匹配常见词（人工验证过的词→序列映射）
+    2. 匹配职位树 L4/L5 关键词
+    3. fallback → product_manager
     """
     templates_cfg = _load_scoring_templates()
-    selection_rules = templates_cfg.get("template_selection", [])
+    templates = templates_cfg.get("templates", {})
 
-    jd_text = _get_jd_text(input_data)
-    company_context = _get_company_context(input_data)
-    combined = jd_text + " " + company_context
-    candidate_role = _extract_role_label(candidate, source_candidate)
+    # 提取 JD 标题
+    jd = {}
+    if isinstance(input_data, dict):
+        jd = input_data.get("jd") or input_data.get("job_description") or {}
+    jd_title = ""
+    if isinstance(jd, dict):
+        jd_title = jd.get("title", "")
+    elif isinstance(jd, str):
+        jd_title = jd
 
-    # 优先级：先检查行业+职位双重条件（最精准），再检查纯职位条件
-    for rule in selection_rules:
-        when = rule.get("when", {})
-        jd_title_kw = when.get("jd_title_contains_any", [])
-        jd_industry_kw = when.get("jd_industry_contains_any", [])
-        role_kw = when.get("candidate_role_contains_any", [])
+    # 用序列识别器自动判断
+    template_id = identify_sequence(jd_title)
 
-        # 行业 + 职位 双重命中（最优先）
-        if jd_industry_kw and jd_title_kw:
-            industry_match = any(kw.lower() in combined.lower() for kw in jd_industry_kw)
-            title_match = any(kw in jd_text for kw in jd_title_kw)
-            if industry_match and title_match:
-                return rule["use"]
+    # 确保返回的模板确实存在，否则用 default
+    if template_id in templates:
+        return template_id
 
-        # JD 职位关键词单独命中
-        if jd_title_kw and any(kw in jd_text for kw in jd_title_kw):
-            return rule["use"]
-
-        # 候选人现职位关键词
-        if role_kw and any(kw in candidate_role for kw in role_kw):
-            return rule["use"]
-
-    return templates_cfg.get("default_template", "b2b_product_general")
+    return templates_cfg.get("default_template", "product_manager")
 
 
 def _infer_industry_adjustments(
