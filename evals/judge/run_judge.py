@@ -27,7 +27,13 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _build_summary_record(batch_id: str, suite_name: str, comparison: Dict[str, Any], weights: Dict[str, float]) -> Dict[str, Any]:
+def _build_summary_record(
+    batch_id: str,
+    suite_name: str,
+    comparison: Dict[str, Any],
+    weights: Dict[str, float],
+    source_paths: Dict[str, Any] | None = None,
+) -> Dict[str, Any]:
     metrics = dict(comparison["metrics"])
     metrics["score"] = compute_score(metrics, weights)
     return {
@@ -36,6 +42,7 @@ def _build_summary_record(batch_id: str, suite_name: str, comparison: Dict[str, 
         "metrics": metrics,
         "hard_errors": comparison["hard_errors"],
         "top3": comparison["top3"],
+        "source_paths": source_paths or {},
     }
 
 
@@ -59,7 +66,13 @@ def main() -> None:
         final_output = run_batch_through_runner(batch_input, model_output_text)
         routing_error_count = detect_routing_error(batch_input, suite["expected_template"])
         comparison = compare_batch(human_labels, final_output, expected_summary, routing_error_count)
-        summary = _build_summary_record(suite["batch_id"], suite_name, comparison, config["score_weights"])
+        summary = _build_summary_record(
+            suite["batch_id"],
+            suite_name,
+            comparison,
+            config["score_weights"],
+            suite.get("source_paths"),
+        )
 
         batch_dir = results_dir / suite["batch_id"]
         batch_dir.mkdir(parents=True, exist_ok=True)

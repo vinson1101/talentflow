@@ -216,15 +216,29 @@ def discover_suite(name: str) -> Dict[str, Any]:
     golden_root = PROJECT_ROOT / "evals" / "golden_set"
 
     if name == "product":
+        calibration_batch_dir = calibration_root / "product_manager_batch_001"
+        golden_batch_dir = golden_root / "product_manager_batch_001"
+        batch_input_path = calibration_batch_dir / "batch_input.json"
+        if not batch_input_path.exists():
+            batch_input_path = golden_batch_dir / "batch_input.json"
+        model_output_path = calibration_batch_dir / "huntmind_output.json"
+        if not model_output_path.exists():
+            model_output_path = golden_batch_dir / "huntmind_output.json"
         return {
             "suite_name": "product",
             "batch_id": "product_manager_batch_001",
             "mode": "cached",
             "expected_template": "product_manager",
-            "batch_input_path": golden_root / "product_manager_batch_001" / "batch_input.json",
-            "model_output_path": golden_root / "product_manager_batch_001" / "huntmind_output.json",
-            "human_labels_path": calibration_root / "product_manager_batch_001" / "human_labels.json",
-            "expected_summary_path": calibration_root / "product_manager_batch_001" / "expected_summary.json",
+            "batch_input_path": batch_input_path,
+            "model_output_path": model_output_path,
+            "human_labels_path": calibration_batch_dir / "human_labels.json",
+            "expected_summary_path": calibration_batch_dir / "expected_summary.json",
+            "source_paths": {
+                "batch_input": str(batch_input_path),
+                "model_output": str(model_output_path),
+                "human_labels": str(calibration_batch_dir / "human_labels.json"),
+                "expected_summary": str(calibration_batch_dir / "expected_summary.json"),
+            },
         }
 
     if name == "frontend_dev":
