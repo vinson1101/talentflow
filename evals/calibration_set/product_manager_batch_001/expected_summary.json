@@ -1,0 +1,20 @@
+{
+  "expected_top_contact_ids": [
+    "local_runs_run_20260323_214437_inbox_11_15K_6_邢威峰",
+    "local_runs_run_20260323_214437_inbox_8_13K_5_李蓓",
+    "local_runs_run_20260323_214437_inbox_8_13K_9_孙铜"
+  ],
+  "expected_no_contact_ids": [
+    "local_runs_run_20260323_214437_inbox_11_15K_2_张金莎",
+    "local_runs_run_20260323_214437_inbox_11_15K_2_许罗栋",
+    "local_runs_run_20260323_214437_inbox_8_13K_2_王宏宇",
+    "local_runs_run_20260323_214437_inbox_11_18K_6_滕锋帅",
+    "local_runs_run_20260323_214437_inbox_8_13K_1_杨淑婷"
+  ],
+  "risk_focus": [
+    "高 willingness 不能顶高 decision",
+    "项目经理不要误判成高 match_fit",
+    "高 fit 但低 recruitability 不能高推进",
+    "human_labels.json 当前为初始校准草稿，需人工复核后再作为真值使用"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "expected_top_contact_ids": [],
+  "expected_no_contact_ids": [],
+  "risk_focus": [
+    "product_manager 不应吞噬 项目经理 / 负责人 / 经理 / director / head 等泛标题",
+    "sales / ops / hr / rd 不应被 product 默认模板误吸",
+    "该批次当前只是骨架，待补真实 JD 和样本"
+  ]
+}

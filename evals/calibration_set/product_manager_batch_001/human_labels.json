@@ -1,0 +1,134 @@
+[
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_11_15K_6_邢威峰",
+    "should_contact": true,
+    "priority": "A",
+    "decision": "strong_yes",
+    "match_fit": "high",
+    "recruitability": "medium",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "根据现有 expected_review 和 final_output 生成的初始校准草稿，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_8_13K_5_李蓓",
+    "should_contact": true,
+    "priority": "A",
+    "decision": "strong_yes",
+    "match_fit": "high",
+    "recruitability": "high",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "根据现有 expected_review 和 final_output 生成的初始校准草稿，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_8_13K_9_孙铜",
+    "should_contact": true,
+    "priority": "B",
+    "decision": "yes",
+    "match_fit": "high",
+    "recruitability": "medium",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "根据现有 expected_review 和 final_output 生成的初始校准草稿，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_8_13K_3_吴嘉楠",
+    "should_contact": true,
+    "priority": "B",
+    "decision": "yes",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "根据现有 expected_review 和 final_output 生成的初始校准草稿，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_8_13K_2_姜月",
+    "should_contact": true,
+    "priority": "B",
+    "decision": "yes",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "recoverable",
+    "primary_reason": "recoverable_but_uncertain",
+    "comment": "根据现有 expected_review 和 final_output 生成的初始校准草稿，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_8_13K_Rango_4_唐晓斌",
+    "should_contact": true,
+    "priority": "B",
+    "decision": "yes",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "根据现有 expected_review 和 final_output 生成的初始校准草稿，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_11_15K_2_张金莎",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "medium",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "hard_mismatch",
+    "comment": "expected_review 明确标注该类样本不应高推，先按 hard_mismatch 草稿处理，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_11_15K_2_周俊仕",
+    "should_contact": false,
+    "priority": "C",
+    "decision": "maybe",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "none",
+    "primary_reason": "insufficient_info",
+    "comment": "根据现有 expected_review 和 final_output 生成的初始校准草稿，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_11_15K_2_许罗栋",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "medium",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "hard_mismatch",
+    "comment": "expected_review 明确标注为非产品经理背景误推风险，先按 hard_mismatch 草稿处理，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_8_13K_2_王宏宇",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "medium",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "low_match_fit",
+    "comment": "项目经理/非产品经理风险样本，先按 hard_mismatch 草稿处理，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_11_18K_6_滕锋帅",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "medium",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "hard_mismatch",
+    "comment": "expected_review 明确标注为非产品经理背景误推风险，先按 hard_mismatch 草稿处理，需人工复核。"
+  },
+  {
+    "candidate_id": "local_runs_run_20260323_214437_inbox_8_13K_1_杨淑婷",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "medium",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "low_match_fit",
+    "comment": "expected_review 明确标注工作年限不足，先按不联系草稿处理，需人工复核。"
+  }
+]

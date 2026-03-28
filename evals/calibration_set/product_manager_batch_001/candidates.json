@@ -1,0 +1,98 @@
+[
+  {
+    "id": "local_runs_run_20260323_214437_inbox_11_15K_6_邢威峰",
+    "name": "邢威峰",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_8_13K_5_李蓓",
+    "name": "李蓓",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_8_13K_9_孙铜",
+    "name": "孙铜",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_8_13K_3_吴嘉楠",
+    "name": "吴嘉楠",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_8_13K_2_姜月",
+    "name": "姜月",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_8_13K_Rango_4_唐晓斌",
+    "name": "唐晓斌",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_11_15K_2_张金莎",
+    "name": "张金莎",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_11_15K_2_周俊仕",
+    "name": "周俊仕",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_11_15K_2_许罗栋",
+    "name": "许罗栋",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_8_13K_2_王宏宇",
+    "name": "王宏宇",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_11_18K_6_滕锋帅",
+    "name": "滕锋帅",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  },
+  {
+    "id": "local_runs_run_20260323_214437_inbox_8_13K_1_杨淑婷",
+    "name": "杨淑婷",
+    "raw_resume": "See legacy source in evals/golden_set/product_manager_batch_001/batch_input.json",
+    "location": "",
+    "current_salary": "",
+    "expected_salary": ""
+  }
+]
