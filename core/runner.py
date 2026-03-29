@@ -1481,8 +1481,8 @@ def _maybe_override_final_decision(candidate: Dict[str, Any]) -> Dict[str, Any]:
         override_reason = f"missing_or_invalid_fields:{','.join(invalid_fields)}"
         trace.append(override_reason)
 
-    review_mismatch = _clean_text(runner_review.get("mismatch_type"))
-    if review_mismatch == "hard_mismatch":
+    model_mismatch = _clean_text(candidate.get("mismatch_type"))
+    if model_mismatch == "hard_mismatch":
         override_applied = True
         override_reason = "hard_mismatch guardrail"
         candidate["decision"] = "no"
