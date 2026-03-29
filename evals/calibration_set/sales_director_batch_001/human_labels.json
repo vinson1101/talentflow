@@ -1,18 +1,46 @@
 [
   {
     "candidate_id": "local_郭萌_汽车销售总监_a9b6945a5309",
-    "should_contact": true
+    "should_contact": true,
+    "priority": "A",
+    "decision": "strong_yes",
+    "match_fit": "high",
+    "recruitability": "medium",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "进入企业Top3并实际进入面试，说明在shortlist/建联阶段属于成功推荐；后续未入职主要是更高层级承接问题，不影响当时应联系的判断。"
   },
   {
     "candidate_id": "local_顾胜兴_Director_of_Automotive_Sales_Try_Consulting_37b2cd45e0d6",
-    "should_contact": true
+    "should_contact": true,
+    "priority": "A",
+    "decision": "strong_yes",
+    "match_fit": "high",
+    "recruitability": "high",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "联系后进入面试并最终入职，说明shortlist判断和可达性判断都成立。"
   },
   {
     "candidate_id": "local_Charles_Ma_汽车销售总监_ff549df02096",
-    "should_contact": false
+    "should_contact": false,
+    "priority": "C",
+    "decision": "maybe",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "recoverable",
+    "primary_reason": "recoverable_but_uncertain",
+    "comment": "猎头已联系，但企业当前未安排面试；主要顾虑是候选人过往业务中国内业务比重较高，与目标岗位方向存在偏差，但不属于彻底打死类型，仍可观察。"
   },
   {
     "candidate_id": "local_Jing_Jing Peng_简历_2025_22a1f357c972",
-    "should_contact": false
+    "should_contact": false,
+    "priority": "C",
+    "decision": "maybe",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "recoverable",
+    "primary_reason": "recoverable_but_uncertain",
+    "comment": "猎头已联系，但企业当前未安排面试；主要顾虑是候选人过往业务中国内业务比重较高，与目标岗位方向存在偏差，但不属于彻底打死类型，仍可观察。"
   }
 ]

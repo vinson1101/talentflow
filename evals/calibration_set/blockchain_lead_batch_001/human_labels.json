@@ -1,22 +1,57 @@
 [
   {
     "candidate_id": "local_范尧迦_区块链业务负责人_9d5c416268cf",
-    "should_contact": true
+    "should_contact": true,
+    "priority": "A",
+    "decision": "strong_yes",
+    "match_fit": "high",
+    "recruitability": "high",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "进入面试并拿到offer，说明shortlist判断、岗位匹配和可推进性都成立。"
   },
   {
     "candidate_id": "local_梅一鸣_产品总监_46fd640e0451",
-    "should_contact": true
+    "should_contact": true,
+    "priority": "B",
+    "decision": "yes",
+    "match_fit": "high",
+    "recruitability": "medium",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "进入企业面试，说明shortlist判断成立；虽未拿到offer，但在当前架构下仍属于值得联系和推进的候选人。"
   },
   {
     "candidate_id": "local_齐齐伟伟_区块链技术专家_6710b04a917b",
-    "should_contact": false
+    "should_contact": false,
+    "priority": "C",
+    "decision": "maybe",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "recoverable",
+    "primary_reason": "recoverable_but_uncertain",
+    "comment": "未进入面试，企业顾虑其大厂背景可能不适合创业企业；当前不推进，但不属于彻底打死类型。"
   },
   {
     "candidate_id": "local_王秀斌_区块链技术专家_56cfd1cf47e9",
-    "should_contact": true
+    "should_contact": true,
+    "priority": "B",
+    "decision": "yes",
+    "match_fit": "high",
+    "recruitability": "medium",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "进入企业面试，说明在shortlist/建联阶段属于成功推荐；虽未拿到offer，但仍应归为值得联系和推进的候选人。"
   },
   {
     "candidate_id": "local_李成才_区块链技术专家_97d4d7e8336d",
-    "should_contact": false
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "medium",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "hard_mismatch",
+    "comment": "未进入面试，企业判断为不匹配，当前不建议推进。"
   }
 ]
