@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
-from core.runner import run as run_output_processing
 from core.sequence_identifier import identify_sequence_with_meta
 
 
@@ -25,11 +23,15 @@ SUITE_EXPECTED_TEMPLATES = {
 
 
 def load_json(path: Path) -> Any:
+    import json
+
     with open(path, "r", encoding="utf-8") as handle:
         return json.load(handle)
 
 
 def write_json(path: Path, data: Any) -> None:
+    import json
+
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(data, handle, ensure_ascii=False, indent=2)
@@ -138,6 +140,12 @@ def aggregate_metric_rows(batch_summaries: List[Dict[str, Any]], weights: Dict[s
             "reason_accuracy": 0.0,
             "routing_error_count": 0,
             "score": 0.0,
+            "hard_errors": {
+                "hard_mismatch_false_positive": 0,
+                "low_fit_high_willingness_promoted": 0,
+                "routing_error_count": 0,
+                "new_high_priority_false_positive": 0,
+            },
         }
 
     total_candidates = 0
@@ -193,69 +201,23 @@ def aggregate_metric_rows(batch_summaries: List[Dict[str, Any]], weights: Dict[s
     return aggregated
 
 
-def build_model_output(candidate_id: str, template_id: str, decision: str, priority: str, should_contact: bool = True) -> str:
-    payload = {
-        "overall_diagnosis": "judge fixture",
-        "batch_advice": "judge fixture",
-        "top_recommendations": [
-            {
-                "candidate_id": candidate_id,
-                "rank": 1,
-                "total_score": 85,
-                "decision": decision,
-                "priority": priority,
-                "action_timing": "today",
-                "core_judgement": "judge candidate",
-                "reasons": ["reason 1", "reason 2", "reason 3"],
-                "risks": ["risk 1"],
-                "score_breakdown": {
-                    "hard_skill": 80,
-                    "experience": 80,
-                    "stability": 80,
-                    "potential": 80,
-                    "conversion": 80
-                },
-                "structured_score": {
-                    "template_id": template_id,
-                    "dimension_scores": {
-                        "hard_skill_match": 80,
-                        "experience_depth": 80,
-                        "innovation_potential": 75,
-                        "execution_goal_breakdown": 80,
-                        "team_fit": 75,
-                        "willingness": 95,
-                        "stability": 70
-                    },
-                    "weight_snapshot": {},
-                    "dimension_evidence": {}
-                },
-                "action": {
-                    "should_contact": should_contact,
-                    "hook_message": "hook",
-                    "verification_question": "question",
-                    "message_template": "template",
-                    "deep_questions": ["q1", "q2", "q3"]
-                }
-            }
-        ]
-    }
-    return json.dumps(payload, ensure_ascii=False)
+def discover_suite(name: str) -> Dict[str, Any]:
+    if name not in SUITE_BATCH_IDS:
+        raise ValueError(f"Unsupported suite: {name}")
 
-
-def _discover_calibration_suite(name: str, calibration_root: Path) -> Dict[str, Any] | None:
     batch_id = SUITE_BATCH_IDS[name]
-    batch_dir = calibration_root / batch_id
+    batch_dir = PROJECT_ROOT / "evals" / "calibration_set" / batch_id
     if not batch_dir.exists():
-        return None
+        raise FileNotFoundError(f"Calibration batch not found for {name}: {batch_dir}")
 
     batch_input_path = batch_dir / "batch_input.json"
-    model_output_path = batch_dir / "huntmind_output.json"
     human_labels_path = batch_dir / "human_labels.json"
     expected_summary_path = batch_dir / "expected_summary.json"
+    notes_path = batch_dir / "notes.md"
 
     missing_required = [
         str(path.relative_to(PROJECT_ROOT))
-        for path in (batch_input_path, model_output_path, human_labels_path)
+        for path in (batch_input_path, human_labels_path)
         if not path.exists()
     ]
     if missing_required:
@@ -266,238 +228,52 @@ def _discover_calibration_suite(name: str, calibration_root: Path) -> Dict[str, 
     return {
         "suite_name": name,
         "batch_id": batch_id,
-        "mode": "cached",
         "expected_template": SUITE_EXPECTED_TEMPLATES[name],
         "batch_input_path": batch_input_path,
-        "model_output_path": model_output_path,
         "human_labels_path": human_labels_path,
         "expected_summary_path": expected_summary_path if expected_summary_path.exists() else None,
-        "source_paths": {
-            "batch_input": str(batch_input_path),
-            "model_output": str(model_output_path),
-            "human_labels": str(human_labels_path),
-            "expected_summary": str(expected_summary_path) if expected_summary_path.exists() else "",
-        },
+        "notes_path": notes_path if notes_path.exists() else None,
     }
 
 
-def discover_suite(name: str) -> Dict[str, Any]:
-    calibration_root = PROJECT_ROOT / "evals" / "calibration_set"
-    golden_root = PROJECT_ROOT / "evals" / "golden_set"
+def _resolve_final_output_path(run_dir: Path, batch_id: str) -> Path:
+    nested_path = run_dir / batch_id / "final_output.json"
+    direct_path = run_dir / "final_output.json"
 
-    if name == "product":
-        calibration_suite = _discover_calibration_suite(name, calibration_root)
-        if calibration_suite is not None:
-            return calibration_suite
+    if nested_path.exists():
+        return nested_path
+    if direct_path.exists():
+        return direct_path
 
-        calibration_batch_dir = calibration_root / "product_manager_batch_001"
-        golden_batch_dir = golden_root / "product_manager_batch_001"
-        batch_input_path = calibration_batch_dir / "batch_input.json"
-        if not batch_input_path.exists():
-            batch_input_path = golden_batch_dir / "batch_input.json"
-        model_output_path = calibration_batch_dir / "huntmind_output.json"
-        if not model_output_path.exists():
-            model_output_path = golden_batch_dir / "huntmind_output.json"
-        return {
-            "suite_name": "product",
-            "batch_id": "product_manager_batch_001",
-            "mode": "cached",
-            "expected_template": "product_manager",
-            "batch_input_path": batch_input_path,
-            "model_output_path": model_output_path,
-            "human_labels_path": calibration_batch_dir / "human_labels.json",
-            "expected_summary_path": calibration_batch_dir / "expected_summary.json",
-            "source_paths": {
-                "batch_input": str(batch_input_path),
-                "model_output": str(model_output_path),
-                "human_labels": str(calibration_batch_dir / "human_labels.json"),
-                "expected_summary": str(calibration_batch_dir / "expected_summary.json"),
-            },
-        }
-
-    if name == "frontend_dev":
-        calibration_suite = _discover_calibration_suite(name, calibration_root)
-        if calibration_suite is not None:
-            return calibration_suite
-
-        batch_input = {
-            "jd": {
-                "title": "前端开发工程师",
-                "must_have": ["React", "TypeScript", "前端工程化"],
-                "nice_to_have": ["性能优化"],
-                "salary_range": "25-35K",
-                "base_location": "上海",
-                "seniority_level": "mid"
-            },
-            "candidates": [
-                {
-                    "id": "frontend_001",
-                    "name": "前端开发样本",
-                    "raw_resume": "前端开发工程师，熟悉 React TypeScript 前端工程化，上海，期望 30K",
-                    "location": "上海",
-                    "expected_salary": "30K"
-                }
-            ]
-        }
-        return {
-            "suite_name": "frontend_dev",
-            "batch_id": "frontend_dev_fixture_001",
-            "mode": "fixture",
-            "expected_template": "rd_engineer",
-            "batch_input": batch_input,
-            "model_output_text": build_model_output("frontend_001", "rd_engineer", "yes", "A"),
-            "human_labels": [
-                {
-                    "candidate_id": "frontend_001",
-                    "should_contact": True,
-                    "priority": "A",
-                    "decision": "yes",
-                    "match_fit": "high",
-                    "recruitability": "high",
-                    "mismatch_type": "none",
-                    "primary_reason": "fit_and_reachable",
-                    "comment": "前端开发样本"
-                }
-            ],
-            "expected_summary": {
-                "expected_top_contact_ids": ["frontend_001"],
-                "expected_no_contact_ids": [],
-                "risk_focus": ["前端开发不应误路由到 product"]
-            }
-        }
-
-    if name == "blockchain_lead":
-        calibration_suite = _discover_calibration_suite(name, calibration_root)
-        if calibration_suite is not None:
-            return calibration_suite
-
-        batch_input = {
-            "jd": {
-                "title": "区块链业务负责人",
-                "must_have": ["渠道合作", "战略合作", "香港市场资源"],
-                "nice_to_have": ["交易所合作"],
-                "salary_range": "40-60K",
-                "base_location": "香港",
-                "seniority_level": "senior",
-                "domain_tags": ["web3", "bd"]
-            },
-            "candidates": [
-                {
-                    "id": "blockchain_001",
-                    "name": "区块链业务负责人样本",
-                    "raw_resume": "Web3 BD 负责人，负责交易所、钱包、机构合作，香港市场渠道资源，战略合作协议谈判",
-                    "location": "香港",
-                    "expected_salary": "50K"
-                }
-            ]
-        }
-        return {
-            "suite_name": "blockchain_lead",
-            "batch_id": "blockchain_lead_fixture_001",
-            "mode": "fixture",
-            "expected_template": "sales_director",
-            "batch_input": batch_input,
-            "model_output_text": build_model_output("blockchain_001", "sales_director", "strong_yes", "A"),
-            "human_labels": [
-                {
-                    "candidate_id": "blockchain_001",
-                    "should_contact": True,
-                    "priority": "A",
-                    "decision": "strong_yes",
-                    "match_fit": "high",
-                    "recruitability": "high",
-                    "mismatch_type": "none",
-                    "primary_reason": "fit_and_reachable",
-                    "comment": "区块链 BD 样本"
-                }
-            ],
-            "expected_summary": {
-                "expected_top_contact_ids": ["blockchain_001"],
-                "expected_no_contact_ids": [],
-                "risk_focus": ["区块链业务负责人不应再误路由到 product_manager"]
-            },
-            "source_paths": {
-                "batch_input": "fixture:inline",
-                "model_output": "fixture:inline",
-                "human_labels": "fixture:inline",
-                "expected_summary": "fixture:inline",
-            },
-        }
-
-    if name == "sales_director":
-        calibration_suite = _discover_calibration_suite(name, calibration_root)
-        if calibration_suite is not None:
-            return calibration_suite
-
-        batch_input = {
-            "jd": {
-                "title": "销售总监",
-                "must_have": ["大客户销售", "渠道管理"],
-                "nice_to_have": ["汽车行业"],
-                "salary_range": "30-40K",
-                "base_location": "上海",
-                "seniority_level": "senior"
-            },
-            "candidates": [
-                {
-                    "id": "sales_001",
-                    "name": "销售总监样本",
-                    "raw_resume": "高级产品经理，负责 PRD、需求分析、增长策略，对销售岗位有兴趣",
-                    "location": "上海",
-                    "expected_salary": "35K"
-                }
-            ]
-        }
-        return {
-            "suite_name": "sales_director",
-            "batch_id": "sales_director_fixture_001",
-            "mode": "fixture",
-            "expected_template": "sales_director",
-            "batch_input": batch_input,
-            "model_output_text": build_model_output("sales_001", "sales_director", "yes", "A"),
-            "human_labels": [
-                {
-                    "candidate_id": "sales_001",
-                    "should_contact": False,
-                    "priority": "N",
-                    "decision": "no",
-                    "match_fit": "low",
-                    "recruitability": "high",
-                    "mismatch_type": "hard_mismatch",
-                    "primary_reason": "hard_mismatch",
-                    "comment": "低匹配高意愿样本"
-                }
-            ],
-            "expected_summary": {
-                "expected_top_contact_ids": [],
-                "expected_no_contact_ids": ["sales_001"],
-                "risk_focus": ["low_fit + high_willingness 不得被抬成 yes"]
-            },
-            "source_paths": {
-                "batch_input": "fixture:inline",
-                "model_output": "fixture:inline",
-                "human_labels": "fixture:inline",
-                "expected_summary": "fixture:inline",
-            },
-        }
-
-    raise ValueError(f"Unsupported suite: {name}")
+    raise FileNotFoundError(
+        "final_output.json not found. Checked: "
+        f"{direct_path} and {nested_path}"
+    )
 
 
-def load_batch_payload(suite: Dict[str, Any]) -> Tuple[Dict[str, Any], str, List[Dict[str, Any]], Dict[str, Any]]:
-    if suite["mode"] == "cached":
-        batch_input_text = (suite["batch_input_path"]).read_text(encoding="utf-8")
-        model_output_text = (suite["model_output_path"]).read_text(encoding="utf-8")
-        human_labels = load_json(suite["human_labels_path"])
-        expected_summary_path = suite.get("expected_summary_path")
-        expected_summary = load_json(expected_summary_path) if expected_summary_path else {}
-        return json.loads(batch_input_text), model_output_text, human_labels, expected_summary
+def load_batch_payload(
+    suite: Dict[str, Any],
+    run_dir: Path,
+) -> Tuple[Dict[str, Any], List[Dict[str, Any]], Dict[str, Any], Dict[str, Any], Dict[str, str]]:
+    batch_input = load_json(suite["batch_input_path"])
+    human_labels = load_json(suite["human_labels_path"])
+    expected_summary_path = suite.get("expected_summary_path")
+    expected_summary = load_json(expected_summary_path) if expected_summary_path else {}
 
-    return suite["batch_input"], suite["model_output_text"], suite["human_labels"], suite["expected_summary"]
+    final_output_path = _resolve_final_output_path(run_dir, suite["batch_id"])
+    final_output = load_json(final_output_path)
 
+    source_paths = {
+        "batch_input": str(suite["batch_input_path"]),
+        "human_labels": str(suite["human_labels_path"]),
+        "final_output": str(final_output_path),
+    }
+    if expected_summary_path:
+        source_paths["expected_summary"] = str(expected_summary_path)
+    if suite.get("notes_path"):
+        source_paths["notes"] = str(suite["notes_path"])
 
-def run_batch_through_runner(batch_input: Dict[str, Any], model_output_text: str) -> Dict[str, Any]:
-    return run_output_processing(batch_input, model_output_text)["json"]
+    return batch_input, human_labels, expected_summary, final_output, source_paths
 
 
 def detect_routing_error(batch_input: Dict[str, Any], expected_template: str) -> int:

@@ -1,25 +1,48 @@
 # Judge
 
-这个目录只放一个固定裁判脚本，用来判断某次规则修改后系统有没有变好。
+Judge 只做一件事：
 
-它做的事情很简单：
+> 比较某次真实运行产出的 `final_output.json` 和 `human_labels.json` 的差异。
 
-1. 读取固定测试集
-2. 用当前版本 runner 重新收敛输出
-3. 和参考标签对比
-4. 计算固定指标
-5. 输出一个清晰结论
+Judge 不再负责：
+
+- 调用 HuntMind
+- 重跑 runner
+- 内置 fixture 造样本
+- 把历史运行产物当成校准集的一部分
+
+## 目录职责
+
+- `evals/calibration_set/`：固定测试输入与人工真值
+- `runs/`：某次真实运行结果
+- `evals/judge/`：比较脚本
+- `evals/results/<run_id>/`：Judge 产出的 compare / summary / report
+
+## 校准集最小结构
+
+```text
+evals/calibration_set/<batch_id>/
+  batch_input.json
+  human_labels.json
+  notes.md   # 可选
+```
 
 ## 运行方式
 
 ```bash
-python -m evals.judge.run_judge --config evals/judge/config.json
+python -m evals.judge.run_judge --config evals/judge/config.json --run-dir runs/<run_id>
 ```
 
-只跑单个 suite：
+`run-dir` 下优先按当前真实主链路寻找：
 
-```bash
-python -m evals.judge.run_judge --config evals/judge/config.json --suite frontend_dev
+```text
+runs/<run_id>/final_output.json
+```
+
+如果以后运行结果改成按 batch 落盘，Judge 也兼容：
+
+```text
+runs/<run_id>/<batch_id>/final_output.json
 ```
 
 ## 默认支持的 4 类测试
@@ -29,22 +52,18 @@ python -m evals.judge.run_judge --config evals/judge/config.json --suite fronten
 - `blockchain_lead`
 - `sales_director`
 
-其中：
-
-- `product` 优先复用现有 `evals/golden_set/product_manager_batch_001`
-- 其余 3 类先走脚本内置 fixture，避免要求手工迁目录
+这些 suite 都必须有正式 calibration batch。Judge 不再 fallback 到脚本内置 fixture。
 
 ## 输出结果
 
 结果默认写到：
 
 ```text
-evals/results/<timestamp>/
+evals/results/<tag>/
 ```
 
 每个 batch 会产出：
 
-- `final_output.json`
 - `compare.json`
 - `summary.json`
 
@@ -52,17 +71,11 @@ evals/results/<timestamp>/
 
 - `report.json`
 
-## 重点看什么
+## Judge 只比较结果
 
-- `contact_accuracy`
-- `top3_hit_rate`
-- `priority_accuracy`
-- `false_positive_rate`
-- `reason_accuracy`
-- 4 个硬错误数量
+Judge 比较的是：
 
-## 当前限制
+- 某次真实运行产出的 `final_output.json`
+- `evals/calibration_set/<batch_id>/human_labels.json`
 
-- 这个脚本是裁判，不会自动 patch 代码
-- `product_manager_batch_001` 当前人工标签仍是初始草稿，结果只能用于趋势判断，不能当最终真值
-- 其余 3 类当前是内置小样本 fixture，后续可以逐步替换成正式 batch
+它不比较过程，也不要求某次历史 `huntmind_output.json` 成为评估资产。

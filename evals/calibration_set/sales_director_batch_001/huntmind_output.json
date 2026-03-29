@@ -38,13 +38,13 @@
       "name": "顾胜兴",
       "source_file": "顾胜兴_Director_of_Automotive_Sales_Try Consulting.pdf",
       "rank": 2,
-      "decision": "maybe",
-      "match_fit": "medium",
+      "decision": "strong_yes",
+      "match_fit": "high",
       "recruitability": "medium",
       "mismatch_type": "none",
       "willingness": "medium",
-      "total_score": 62.0,
-      "action_timing": "this_week",
+      "total_score": 75.0,
+      "action_timing": "now",
       "core_judgement": "比亚迪美国经验Director级背景",
       "reasons": [
         "简历显示曾在比亚迪美国（Lancaster工厂）和上海参与EV汽车业务，有北美汽车OEM直接接触经验",
@@ -56,7 +56,7 @@
         "目前可能不在国内，需要确认是否愿意回来工作",
         "JD要求Director级，候选人履历是否真正达到Director层级需要核验"
       ],
-      "priority": "B",
+      "priority": "A",
       "action": {
         "message_template": "您好顾总，看到您有比亚迪美国和上海EV业务经验，我们招聘汽车销售总监，想了解一下您目前的求职状态。",
         "deep_questions": [
