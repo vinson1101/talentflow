@@ -1,0 +1,55 @@
+{
+  "overall_diagnosis": "judge fixture",
+  "batch_advice": "judge fixture",
+  "top_recommendations": [
+    {
+      "candidate_id": "blockchain_001",
+      "rank": 1,
+      "total_score": 85,
+      "decision": "strong_yes",
+      "priority": "A",
+      "action_timing": "today",
+      "core_judgement": "judge candidate",
+      "reasons": [
+        "reason 1",
+        "reason 2",
+        "reason 3"
+      ],
+      "risks": [
+        "risk 1"
+      ],
+      "score_breakdown": {
+        "hard_skill": 80,
+        "experience": 80,
+        "stability": 80,
+        "potential": 80,
+        "conversion": 80
+      },
+      "structured_score": {
+        "template_id": "sales_director",
+        "dimension_scores": {
+          "hard_skill_match": 80,
+          "experience_depth": 80,
+          "innovation_potential": 75,
+          "execution_goal_breakdown": 80,
+          "team_fit": 75,
+          "willingness": 95,
+          "stability": 70
+        },
+        "weight_snapshot": {},
+        "dimension_evidence": {}
+      },
+      "action": {
+        "should_contact": true,
+        "hook_message": "hook",
+        "verification_question": "question",
+        "message_template": "template",
+        "deep_questions": [
+          "q1",
+          "q2",
+          "q3"
+        ]
+      }
+    }
+  ]
+}

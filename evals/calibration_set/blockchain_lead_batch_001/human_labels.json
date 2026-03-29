@@ -1,0 +1,13 @@
+[
+  {
+    "candidate_id": "blockchain_001",
+    "should_contact": true,
+    "priority": "A",
+    "decision": "strong_yes",
+    "match_fit": "high",
+    "recruitability": "high",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "区块链 BD 样本"
+  }
+]

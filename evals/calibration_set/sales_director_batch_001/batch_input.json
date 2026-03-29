@@ -1,0 +1,24 @@
+{
+  "jd": {
+    "title": "销售总监",
+    "must_have": [
+      "大客户销售",
+      "渠道管理"
+    ],
+    "nice_to_have": [
+      "汽车行业"
+    ],
+    "salary_range": "30-40K",
+    "base_location": "上海",
+    "seniority_level": "senior"
+  },
+  "candidates": [
+    {
+      "id": "sales_001",
+      "name": "销售总监样本",
+      "raw_resume": "高级产品经理，负责 PRD、需求分析、增长策略，对销售岗位有兴趣",
+      "location": "上海",
+      "expected_salary": "35K"
+    }
+  ]
+}

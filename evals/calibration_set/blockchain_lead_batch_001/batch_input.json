@@ -1,0 +1,29 @@
+{
+  "jd": {
+    "title": "区块链业务负责人",
+    "must_have": [
+      "渠道合作",
+      "战略合作",
+      "香港市场资源"
+    ],
+    "nice_to_have": [
+      "交易所合作"
+    ],
+    "salary_range": "40-60K",
+    "base_location": "香港",
+    "seniority_level": "senior",
+    "domain_tags": [
+      "web3",
+      "bd"
+    ]
+  },
+  "candidates": [
+    {
+      "id": "blockchain_001",
+      "name": "区块链业务负责人样本",
+      "raw_resume": "Web3 BD 负责人，负责交易所、钱包、机构合作，香港市场渠道资源，战略合作协议谈判",
+      "location": "香港",
+      "expected_salary": "50K"
+    }
+  ]
+}

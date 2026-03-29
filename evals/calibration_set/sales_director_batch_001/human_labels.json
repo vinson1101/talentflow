@@ -1,0 +1,13 @@
+[
+  {
+    "candidate_id": "sales_001",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "high",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "hard_mismatch",
+    "comment": "低匹配高意愿样本"
+  }
+]

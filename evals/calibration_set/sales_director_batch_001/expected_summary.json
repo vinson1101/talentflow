@@ -1,0 +1,9 @@
+{
+  "expected_top_contact_ids": [],
+  "expected_no_contact_ids": [
+    "sales_001"
+  ],
+  "risk_focus": [
+    "low_fit + high_willingness 不得被抬成 yes"
+  ]
+}

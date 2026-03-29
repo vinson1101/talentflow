@@ -1,0 +1,9 @@
+{
+  "expected_top_contact_ids": [
+    "blockchain_001"
+  ],
+  "expected_no_contact_ids": [],
+  "risk_focus": [
+    "区块链业务负责人不应再误路由到 product_manager"
+  ]
+}
