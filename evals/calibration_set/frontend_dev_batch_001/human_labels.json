@@ -1,13 +1,46 @@
 [
   {
-    "candidate_id": "frontend_001",
-    "should_contact": true,
-    "priority": "A",
-    "decision": "yes",
-    "match_fit": "high",
-    "recruitability": "high",
+    "candidate_id": "local_覃屈容_1年_fc0f914da093",
+    "should_contact": false,
+    "priority": "C",
+    "decision": "maybe",
+    "match_fit": "low",
+    "recruitability": "low",
     "mismatch_type": "none",
-    "primary_reason": "fit_and_reachable",
-    "comment": "前端开发样本"
+    "primary_reason": "no_work_experience",
+    "comment": "无前端工作经验"
+  },
+  {
+    "candidate_id": "local_康冉_康冉_e1947c14c973",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "low",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "no_front_end_evidence",
+    "comment": "无前端经验"
+  },
+  {
+    "candidate_id": "local_俞纬_JAVA中级_78fba26ad6fd",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "low",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "java_backend_not_frontend",
+    "comment": "Java后端不是前端"
+  },
+  {
+    "candidate_id": "local_胡梦婕_2年_85d9e01d741d",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "low",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "product_manager_not_frontend",
+    "comment": "产品经理不是前端"
   }
 ]

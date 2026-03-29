@@ -1,13 +1,57 @@
 [
   {
-    "candidate_id": "blockchain_001",
+    "candidate_id": "local_范尧迦_区块链业务负责人_9d5c416268cf",
     "should_contact": true,
     "priority": "A",
-    "decision": "strong_yes",
+    "decision": "yes",
     "match_fit": "high",
     "recruitability": "high",
     "mismatch_type": "none",
     "primary_reason": "fit_and_reachable",
-    "comment": "区块链 BD 样本"
+    "comment": "offer"
+  },
+  {
+    "candidate_id": "local_梅一鸣_产品总监_46fd640e0451",
+    "should_contact": true,
+    "priority": "A",
+    "decision": "yes",
+    "match_fit": "high",
+    "recruitability": "high",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "offer"
+  },
+  {
+    "candidate_id": "local_齐齐伟伟_区块链技术专家_6710b04a917b",
+    "should_contact": false,
+    "priority": "B",
+    "decision": "maybe",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "recoverable",
+    "primary_reason": "potential_fit",
+    "comment": "没联系"
+  },
+  {
+    "candidate_id": "local_王秀斌_区块链技术专家_56cfd1cf47e9",
+    "should_contact": true,
+    "priority": "B",
+    "decision": "yes",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "recoverable",
+    "primary_reason": "potential_fit",
+    "comment": "面试"
+  },
+  {
+    "candidate_id": "local_李成才_区块链技术专家_97d4d7e8336d",
+    "should_contact": false,
+    "priority": "N",
+    "decision": "no",
+    "match_fit": "low",
+    "recruitability": "low",
+    "mismatch_type": "hard_mismatch",
+    "primary_reason": "hard_mismatch",
+    "comment": "没联系"
   }
 ]

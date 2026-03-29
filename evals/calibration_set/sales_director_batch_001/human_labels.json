@@ -1,13 +1,46 @@
 [
   {
-    "candidate_id": "sales_001",
+    "candidate_id": "local_郭萌_汽车销售总监_a9b6945a5309",
+    "should_contact": true,
+    "priority": "A",
+    "decision": "yes",
+    "match_fit": "high",
+    "recruitability": "high",
+    "mismatch_type": "none",
+    "primary_reason": "fit_and_reachable",
+    "comment": "建联"
+  },
+  {
+    "candidate_id": "local_顾胜兴_Director_of_Automotive_Sales_Try_Consulting_37b2cd45e0d6",
+    "should_contact": true,
+    "priority": "B",
+    "decision": "maybe",
+    "match_fit": "medium",
+    "recruitability": "medium",
+    "mismatch_type": "none",
+    "primary_reason": "potential_fit",
+    "comment": "offer"
+  },
+  {
+    "candidate_id": "local_Charles_Ma_汽车销售总监_ff549df02096",
+    "should_contact": false,
+    "priority": "A",
+    "decision": "strong_yes",
+    "match_fit": "high",
+    "recruitability": "low",
+    "mismatch_type": "none",
+    "primary_reason": "fit_but_unreachable",
+    "comment": "没选"
+  },
+  {
+    "candidate_id": "local_Jing_Jing Peng_简历_2025_22a1f357c972",
     "should_contact": false,
     "priority": "N",
     "decision": "no",
     "match_fit": "low",
-    "recruitability": "high",
+    "recruitability": "low",
     "mismatch_type": "hard_mismatch",
     "primary_reason": "hard_mismatch",
-    "comment": "低匹配高意愿样本"
+    "comment": "没选"
   }
 ]

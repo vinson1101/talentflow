@@ -2,24 +2,115 @@
   "jd": {
     "title": "前端开发工程师",
     "must_have": [
-      "React",
-      "TypeScript",
-      "前端工程化"
+      "1-3年前端开发经验",
+      "熟练掌握HTML5、CSS3、JavaScript（ES6+）",
+      "熟悉至少一种主流前端框架（Vue.js/React/Angular）",
+      "有实际项目经验"
     ],
     "nice_to_have": [
-      "性能优化"
+      "了解TypeScript",
+      "熟悉Webpack/Vite等构建工具",
+      "有小程序/H5开发经验",
+      "有UI设计能力"
     ],
-    "salary_range": "25-35K",
-    "base_location": "上海",
-    "seniority_level": "mid"
+    "salary_range": "9,000-13,000元/月",
+    "location": "",
+    "company_context": "宁波Web/移动端产品开发公司",
+    "priority_focus": "skill",
+    "base_location": "宁波",
+    "seniority_level": "mid",
+    "reporting_line": "",
+    "language_requirements": [],
+    "eligibility_constraints": [],
+    "travel_or_relocation": "",
+    "industry_context": "",
+    "domain_tags": [
+      "前端开发",
+      "Web",
+      "H5",
+      "小程序"
+    ]
   },
   "candidates": [
     {
-      "id": "frontend_001",
-      "name": "前端开发样本",
-      "raw_resume": "前端开发工程师，熟悉 React TypeScript 前端工程化，上海，期望 30K",
-      "location": "上海",
-      "expected_salary": "30K"
+      "id": "local_覃屈容_1年_fc0f914da093",
+      "name": "覃屈容",
+      "raw_resume": "基本信息：覃屈容/ 女/ 22 岁 \n籍 贯：四川 \n电 话：132-5197-1007 \n邮 箱：qqr_kelly@163.com \n期望职位：web 前端 \n \n学 历：本科/ 计算机科学与技术 \n毕业院校：宁波工程学院 \n政治面貌：中共党员 \n英语水平：CET-4 \n工作性质：全职 \n个人信息 \n项目经历 \n2019.04-2020.06 国家级大学生创新训练项目 （岗位：项目负责人） \n⚫ 项目名称：表格式通讯录中字符图像分割和识别研究 \n⚫ 项目简介：该项目设计专用的图像处理、字符分割及识别算法，对用手机拍摄的表格式通信录中的字符\n信息进行自动分割和识别，并将识别的结果保存到手机通讯录中。项目成果可取代传统的手动、逐个输\n入通讯信息的方式，实现批量通信信息的快捷和高效录入。 \n⚫ 主要工作：图像预处理和字符分割、字符识别、App 软件的 UI 设计、App 软件的界面开发 \n⚫ 我负责的核心业务： \n➢ 图像灰度化、 二值化和边缘检测的预处理：用 AndroidStudio3.6 配置 OpenCV， 采用加权平均法\n实现图像的灰度化，用局部自适应阈值来对图像进行二值化处理， 用 Canny 算子实现边缘检测 \n➢ 单元格定位分割：将预处理后的图像进行水平和垂直投影得到直方图， 根据直方图的峰值确定切割\n点所在的位置进行切割实现单元格的分割。 \n \n2018.07-2018.09 机器人实验室暑期社会实践活动 （岗位：团队负责人） \n⚫ 团队名称：梦创未来，童享科技 \n⚫ 主要工作：Scratch 少年编程教学，Arduino 编程教学，机器人零部件 3D 设计和打印教学，超声波机\n器人拼装和线路连接指导； \n⚫ 我负责的核心业务： \n➢ 基础 Arduino 编程教学 \n➢ 机器人零部件 3D 设计和打印教学 \n➢ 超声波机器人拼装和线路连接指导 \n➢ 团队成员任务分工 \n \n \n个人简历 \n今日事，今日毕。 \nPersonal resume \n教育背景 \n2017.09~2021 宁波工程学院 计算机科学与技术（本科） \n主修课程： C++、Java、JavaWeb、数据结构、计算机网络、计算机组成原理、操作系统、 \n 数据库理论与技术、算法设计与分析、Android 平台应用与开发、UI 设计、视觉传达设计等 \n7dea3110bb6c5e6f3nZ63tm8EVdT3463UfyWQuGn\n \n掌握技能 \n2020.05-2020.06 学年设计前端开发项目 （岗位：项目成员） \n⚫ 项目名称：仿淘宝 App 开发 \n⚫ 项目简介：此项目主要是为了提高开发人员熟悉前端开发流程和开发效率而设计的 \n⚫ 主要工作：编写模块设计文档、设计页面、框架搭建、业务编码 \n⚫ 我负责的业务： \n➢ 多页面商品分类展示：使用 Vue 的全局组件 component，HTML5,CSS3 和 JavaScript 实现商品\n在移动端不同页面的显示 \n自我评价 \n2019.02-2020.02 计科系学生党支部 （岗位：联络员） \n⚫ 支部名称：电信学院计科系学生党支部 \n⚫ 主要工作：主持开展支部会议、支部党日活动、支部学习交流会和转正答辩等，并做好相关记录 \n \n2017.09~2020.12 \n⚫ 曾任计科系学生党支部联络员、班级团支书 \n⚫ 获得 2019 年度校优秀共产党员、校优秀学生干部称号称号 \n⚫ 连续三年获得国家励志奖学金和校三等奖学金 \n⚫ 连续三年获得校运会女子 800 米冠军 \n校园经历 \n⚫ 熟练使用 PhotoShop、CoreIDRAW 和 Axure 绘图修图工具 \n⚫ C++：熟练掌握 C++语法和各种算法 \n⚫ 前端技能：熟悉 HTML、CSS3 和 JavaScript 的网页布局开发，并有相关项目经验 \n⚫ VUE 框架：学习 VUE 框架技能，有相关案例开发经验 \n⚫ 微信小程序：掌握基本微信小程序开发技能 \n1. 学习能力和抗压能力强 \n2. 时常健身锻炼 \n3. 追求代码整洁，避免重复，力求 API 简洁易懂 \n2021.07-2021.08 仿小米官网首页开发 \n⚫ 项目简介：模仿小米 PC 端官网进行开发，高仿官网布局。 \n⚫ 主要工作：分析页面布局，确定整体布局，根据页面布局确定HTML 标签，搭建整体框架，使用\nCSS 样式修饰 HTML 样式 \n2021.08 画板开发案例 \n⚫ 项目简介：画板开发案例，使用 canvas 实现画图功能 \n⚫ 主要工作：结合 JS 语言，实现画板画图的线条粗细、颜色改变，连点成线和清除画板的功能。",
+      "extra_info": "source=local; file_name=覃屈容_1年.pdf",
+      "source": {
+        "platform": "local",
+        "channel": "local_folder",
+        "file_id": "覃屈容_1年_fc0f914da093",
+        "file_name": "覃屈容_1年.pdf",
+        "folder_id": "/root/.openclaw/workspace-huntmind/talentflow/data/feishu_frontend_batch"
+      },
+      "ingestion_meta": {
+        "parse_status": "success",
+        "parse_method": "pdf",
+        "text_length": 1928,
+        "is_truncated": false,
+        "name_source": "file_name"
+      }
+    },
+    {
+      "id": "local_康冉_康冉_e1947c14c973",
+      "name": "康冉",
+      "raw_resume": "姓 名 ：康冉\n民 族 ：汉\n电 话 ：18067212645\n邮 箱：2807291656@qq,com\n住 址：贵州省织金县猫场镇凤平村\n出生年月：1997.5\n身 高：156cm\n政治面貌：团员\n毕业院校 ：宁波理工学院\n学 历 ：本科\n基本信息\n教育背景\n在校时间：2018.09-2022.07 学校：宁波理工学院 专业：数据科学与大数据专业 （本科）\n主修课程：大数据处理技术 Hadoop 大数据挖掘 java web 开发技术与实践 OpenGL 编程指南\n机器学习 数据结构 算法设计与分析 数学建模等等\n实习经历\n2019.09-2020.06 青芒教育有限公司 数学教师\n  面试试讲后由其他老师带领上课，备课、评改学生作业等等，两周后独立上课\n校园经历\n在校时间：2018.03-2022.06\n  加入青协、结构协会等。期间积极协助组织各种活动，整体活动前期开展了相关的线上线下宣传活动，。后期\n进行了后动的维护阶段，保证了整个活动的完整性。\n技能证书\n普通话二级甲等；\n大学英语四（CET-4），\n通过全国计算机二级考试，熟练运用 office 相关软件。\n自我评价\n性格温和，善于沟通，比起“多多帮助”，更喜欢“互帮互助”\nd6ce9587415b59cd3nB729u0GFZW3463UfyWQuGn",
+      "extra_info": "source=local; file_name=康冉_一年以内.pdf",
+      "source": {
+        "platform": "local",
+        "channel": "local_folder",
+        "file_id": "康冉_一年以内_e1947c14c973",
+        "file_name": "康冉_一年以内.pdf",
+        "folder_id": "/root/.openclaw/workspace-huntmind/talentflow/data/feishu_frontend_batch"
+      },
+      "ingestion_meta": {
+        "parse_status": "success",
+        "parse_method": "pdf",
+        "text_length": 567,
+        "is_truncated": false,
+        "name_source": "resume_explicit"
+      }
+    },
+    {
+      "id": "local_俞纬_JAVA中级_78fba26ad6fd",
+      "name": "俞纬",
+      "raw_resume": "Java 岗位应聘-个人简历\n基本资料\n姓 名：俞纬 政治面貌: 团员\n出生年月：1998/11/05 民 族： 汉\n性 别：男 专 业： 计算机科学与技术\n联系电话：15858470213 学 历： 本科\n电子邮件：2623455347@qq.com 毕业院校： 浙江万里学院\n毕业年份：2021\n应聘岗位\nJava 开发工程师\n专业技能\n◎ 常用的开发工具：idea、vscode、datagrip、redis\n◎ 常用的开发语言：java 、sql 等;\n◎ 熟练使用 Spring、Springboot、vue、mybatis 等开发框架;\n◎ 了解 git、docker；\n◎ 了解 maven、gradle，tomcat，element-ui 等组件；\n◎ 了解 Linux 基本命令；\n项目经历经经历\n2020.03- 2020.06\n行走书店管理系统项目\n使用 springboot 框架开发过项目，做过权限认证，用户登录，上传下载、POI 导入导出等功能。\n1.权限认证：使用 spring security + JWT 权限认证。\nspring security：基于 Spring 的企业应用系统提供声明式的安全访问控制解决方案的安全框架。\n包含：密码加密算法、url 安全访问策略等。\n2.用户登录功能：获取 token，与 redis 中存储的进行比对，判断用户\n3.系统菜单权限控制：\n四层权限控制模型：菜单、权限、角色、用户\n4.上传、下载：\n使用 FileUploadUtils 工具类，以文件输入流的形式上传于下载。\n5.poi 导入导出：\na902817bac87745f1nR609q0EVRVxJG9WfqZTOOnmg~~\n实习经历经经历\n实习时间：2020.10——2021.1\n实习单位：优城联合（宁波）信息技术发展有限公司\n实习岗位：Java 开发实习生\n工作内容（项目）：\n1、参加宁波轨道交通大数据平台开发\n使用的技术：SpringBoot 框架，PostgreSQL，mybatis plus\n实现各类增删改查操作、完善各类功能模块、对数据库的数据进行存取、配合前端开发工程师根据需求完善整个项目。\n2、参与开发徐州资源一体化项目（移动手机端）\n使用的技术：egg 框架、nodejs、mysql 数据库\n依照需求实现各个模块的开发、通过操作 mysql 数据库，将数据完整且正确的显示到页面上、配合前端开发的进行和\n需求完善后端的代码\n3、长丰悦领汇停车场\n使用的技术：egg 框架、nodejs、mysql 数据库\n依照要求，建立了相应的数据库表，使实时数据可以正确的写入到数据库之中。\n教育背景\n2017.9-2021-6\n学校：浙江万里学院\n学院：大数据与软件工程\n专业：计算机科学与技术\n入学年份 2017 年\n毕业年份 2021 年\n自我评价\n本人性格沉稳、正直忠诚、执行力强；对工作乐观执着，敢于面对困难与挑战。\n有较强的组织领导能力，有团队合作精神、敏锐的洞察能力、责任心强；具备良好的逻辑思维能力和心理素质。\n有较好的沟通和抗压能力，喜欢挑战，讲原则，说到做到，不推卸责任，有自制力。",
+      "extra_info": "source=local; file_name=俞纬_JAVA中级.pdf",
+      "source": {
+        "platform": "local",
+        "channel": "local_folder",
+        "file_id": "俞纬_JAVA中级_78fba26ad6fd",
+        "file_name": "俞纬_JAVA中级.pdf",
+        "folder_id": "/root/.openclaw/workspace-huntmind/talentflow/data/feishu_frontend_batch"
+      },
+      "ingestion_meta": {
+        "parse_status": "success",
+        "parse_method": "pdf",
+        "text_length": 1328,
+        "is_truncated": false,
+        "name_source": "resume_explicit"
+      }
+    },
+    {
+      "id": "local_胡梦婕_2年_85d9e01d741d",
+      "name": "胡梦婕",
+      "raw_resume": "求 职 意 向\n从事职业\n产品经理、需求分析师\n期望月薪\n11K-15K\n工 作 经 历\n公司名称\n浙江蕙康科技有限公司\n职位名称\n产品经理\n在职时间\n2020.09-至今\n税前月薪\n8.5K\n公司名称\n浙江中塑股份有限公司\n职位名称\n产品经理\n在职时间\n2020.03-2020.09\n税前月薪\n6k\n胡梦婕\n自 我 评 价\n※我能够以行动为导向并追求卓越成效。\n※积极乐观、诚实守信、责任心强。有较好的心理素质。具备一定的与人沟通协调\n的社交能力，能认真聆听客户的需求并给以反馈。\n※接收新事物能力较强，有较强的适应能力和团队合作精神。\n※具有良好的沟通能力、逻辑思维能力与项目管理能力。\n电话：15765986607\n 工作经验：3 年\n 年龄：26\n邮箱：850374043@QQ.com 现住城市：宁波市鄞州区\n教 育 背 景 相关 技能\n学校名称 技能\n黑龙江八一农垦大学\nAxure、墨刀、xmind、\nvisio、PS、coredraw...\n就读时间\n2015.07-2019.06 普通话二甲\n所学专业\n工业设计\n工作描述\n1、产品设计相关：进行前期的需求调研与流程、功能梳理，并进行后续的产品原型与交互设计，设\n计过程中与研发保持交流确认开发难度，并输出相应的需求、字典等文档。\n2、项目管理相关：利用甘特图进行项目开发进度管理，组织定期例会同步前后端、产品 ui 的工作进\n度，及时了解开发过程中存在问题并进行讨论，通过管理工具（如 jira、禅道）进行项目管理，确保\n项目按时上线交付。\n3、产品售前相关：主要负责与用户介绍互联网医疗的相关业务与涉及范围，让用户了解互联网医疗\n的基本生态环境与对能为医院提供哪些服务，进行已有产品的演示，同时与客户交流需求，为后续的\n项目建设做准备。【产出：项目建设方案、sop 流程、功能清单、验收文档等 】\n4、负责项目概述：从 0-1 的项目包括运城中心医院随访项目、华东医药糖心关爱-商城模块、宁波中\n医院支付宝小程序的前后台页面；\n其他迭代需求包括健康宁波的排队候诊、上海仁济互联网医院的合理用药、健康新疆兵团的疫苗预约\n模块、武汉马应龙医院的诊疗记录管理、评价体系等等。\n工作描述\n1. 项目概述：针对于中塑网站一期市场、运营人员反馈存在问题，与发展过程中新需求（如抖音直\n播、即时通讯），进行中塑网站的二期迭代，包括门户网站、运营平台管理。\n2.主要工作：针对于部分重要模块，前期进行需求的调研与同步、确认；进行产品的设计、需求文档\n的书写，与 ui、开发的沟通和跟进；后期进行进度的把控，相关文档的补充（如字典数据），流程功\n能性的测试确保上线等。\n3、负责内容概述：资讯、广告、帮助中心、价格行情等的前后台页面\nCET6、\n奖项证书\neaeac12641b1c8043nR60tq8E1JY3463UfyWQuGn",
+      "extra_info": "source=local; file_name=胡梦婕_2年.pdf",
+      "source": {
+        "platform": "local",
+        "channel": "local_folder",
+        "file_id": "胡梦婕_2年_85d9e01d741d",
+        "file_name": "胡梦婕_2年.pdf",
+        "folder_id": "/root/.openclaw/workspace-huntmind/talentflow/data/feishu_frontend_batch"
+      },
+      "ingestion_meta": {
+        "parse_status": "success",
+        "parse_method": "pdf",
+        "text_length": 1196,
+        "is_truncated": false,
+        "name_source": "resume_standalone"
+      }
     }
   ]
 }
