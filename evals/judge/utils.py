@@ -10,6 +10,18 @@ from core.sequence_identifier import identify_sequence_with_meta
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+SUITE_BATCH_IDS = {
+    "product": "product_manager_batch_001",
+    "frontend_dev": "frontend_dev_batch_001",
+    "blockchain_lead": "blockchain_lead_batch_001",
+    "sales_director": "sales_director_batch_001",
+}
+SUITE_EXPECTED_TEMPLATES = {
+    "product": "product_manager",
+    "frontend_dev": "rd_engineer",
+    "blockchain_lead": "sales_director",
+    "sales_director": "sales_director",
+}
 
 
 def load_json(path: Path) -> Any:
@@ -211,11 +223,54 @@ def build_model_output(candidate_id: str, template_id: str, decision: str, prior
     return json.dumps(payload, ensure_ascii=False)
 
 
+def _discover_calibration_suite(name: str, calibration_root: Path) -> Dict[str, Any] | None:
+    batch_id = SUITE_BATCH_IDS[name]
+    batch_dir = calibration_root / batch_id
+    if not batch_dir.exists():
+        return None
+
+    batch_input_path = batch_dir / "batch_input.json"
+    model_output_path = batch_dir / "huntmind_output.json"
+    human_labels_path = batch_dir / "human_labels.json"
+    expected_summary_path = batch_dir / "expected_summary.json"
+
+    missing_required = [
+        str(path.relative_to(PROJECT_ROOT))
+        for path in (batch_input_path, model_output_path, human_labels_path)
+        if not path.exists()
+    ]
+    if missing_required:
+        raise FileNotFoundError(
+            f"Calibration batch exists for {name}, but required files are missing: {', '.join(missing_required)}"
+        )
+
+    return {
+        "suite_name": name,
+        "batch_id": batch_id,
+        "mode": "cached",
+        "expected_template": SUITE_EXPECTED_TEMPLATES[name],
+        "batch_input_path": batch_input_path,
+        "model_output_path": model_output_path,
+        "human_labels_path": human_labels_path,
+        "expected_summary_path": expected_summary_path if expected_summary_path.exists() else None,
+        "source_paths": {
+            "batch_input": str(batch_input_path),
+            "model_output": str(model_output_path),
+            "human_labels": str(human_labels_path),
+            "expected_summary": str(expected_summary_path) if expected_summary_path.exists() else "",
+        },
+    }
+
+
 def discover_suite(name: str) -> Dict[str, Any]:
     calibration_root = PROJECT_ROOT / "evals" / "calibration_set"
     golden_root = PROJECT_ROOT / "evals" / "golden_set"
 
     if name == "product":
+        calibration_suite = _discover_calibration_suite(name, calibration_root)
+        if calibration_suite is not None:
+            return calibration_suite
+
         calibration_batch_dir = calibration_root / "product_manager_batch_001"
         golden_batch_dir = golden_root / "product_manager_batch_001"
         batch_input_path = calibration_batch_dir / "batch_input.json"
@@ -242,33 +297,9 @@ def discover_suite(name: str) -> Dict[str, Any]:
         }
 
     if name == "frontend_dev":
-        calibration_batch_dir = calibration_root / "frontend_dev_batch_001"
-        batch_input_path = calibration_batch_dir / "batch_input.json"
-        model_output_path = calibration_batch_dir / "huntmind_output.json"
-        human_labels_path = calibration_batch_dir / "human_labels.json"
-        expected_summary_path = calibration_batch_dir / "expected_summary.json"
-        if (
-            batch_input_path.exists()
-            and model_output_path.exists()
-            and human_labels_path.exists()
-            and expected_summary_path.exists()
-        ):
-            return {
-                "suite_name": "frontend_dev",
-                "batch_id": "frontend_dev_batch_001",
-                "mode": "cached",
-                "expected_template": "rd_engineer",
-                "batch_input_path": batch_input_path,
-                "model_output_path": model_output_path,
-                "human_labels_path": human_labels_path,
-                "expected_summary_path": expected_summary_path,
-                "source_paths": {
-                    "batch_input": str(batch_input_path),
-                    "model_output": str(model_output_path),
-                    "human_labels": str(human_labels_path),
-                    "expected_summary": str(expected_summary_path),
-                },
-            }
+        calibration_suite = _discover_calibration_suite(name, calibration_root)
+        if calibration_suite is not None:
+            return calibration_suite
 
         batch_input = {
             "jd": {
@@ -317,33 +348,9 @@ def discover_suite(name: str) -> Dict[str, Any]:
         }
 
     if name == "blockchain_lead":
-        calibration_batch_dir = calibration_root / "blockchain_lead_batch_001"
-        batch_input_path = calibration_batch_dir / "batch_input.json"
-        model_output_path = calibration_batch_dir / "huntmind_output.json"
-        human_labels_path = calibration_batch_dir / "human_labels.json"
-        expected_summary_path = calibration_batch_dir / "expected_summary.json"
-        if (
-            batch_input_path.exists()
-            and model_output_path.exists()
-            and human_labels_path.exists()
-            and expected_summary_path.exists()
-        ):
-            return {
-                "suite_name": "blockchain_lead",
-                "batch_id": "blockchain_lead_batch_001",
-                "mode": "cached",
-                "expected_template": "sales_director",
-                "batch_input_path": batch_input_path,
-                "model_output_path": model_output_path,
-                "human_labels_path": human_labels_path,
-                "expected_summary_path": expected_summary_path,
-                "source_paths": {
-                    "batch_input": str(batch_input_path),
-                    "model_output": str(model_output_path),
-                    "human_labels": str(human_labels_path),
-                    "expected_summary": str(expected_summary_path),
-                },
-            }
+        calibration_suite = _discover_calibration_suite(name, calibration_root)
+        if calibration_suite is not None:
+            return calibration_suite
 
         batch_input = {
             "jd": {
@@ -399,33 +406,9 @@ def discover_suite(name: str) -> Dict[str, Any]:
         }
 
     if name == "sales_director":
-        calibration_batch_dir = calibration_root / "sales_director_batch_001"
-        batch_input_path = calibration_batch_dir / "batch_input.json"
-        model_output_path = calibration_batch_dir / "huntmind_output.json"
-        human_labels_path = calibration_batch_dir / "human_labels.json"
-        expected_summary_path = calibration_batch_dir / "expected_summary.json"
-        if (
-            batch_input_path.exists()
-            and model_output_path.exists()
-            and human_labels_path.exists()
-            and expected_summary_path.exists()
-        ):
-            return {
-                "suite_name": "sales_director",
-                "batch_id": "sales_director_batch_001",
-                "mode": "cached",
-                "expected_template": "sales_director",
-                "batch_input_path": batch_input_path,
-                "model_output_path": model_output_path,
-                "human_labels_path": human_labels_path,
-                "expected_summary_path": expected_summary_path,
-                "source_paths": {
-                    "batch_input": str(batch_input_path),
-                    "model_output": str(model_output_path),
-                    "human_labels": str(human_labels_path),
-                    "expected_summary": str(expected_summary_path),
-                },
-            }
+        calibration_suite = _discover_calibration_suite(name, calibration_root)
+        if calibration_suite is not None:
+            return calibration_suite
 
         batch_input = {
             "jd": {
@@ -487,7 +470,8 @@ def load_batch_payload(suite: Dict[str, Any]) -> Tuple[Dict[str, Any], str, List
         batch_input_text = (suite["batch_input_path"]).read_text(encoding="utf-8")
         model_output_text = (suite["model_output_path"]).read_text(encoding="utf-8")
         human_labels = load_json(suite["human_labels_path"])
-        expected_summary = load_json(suite["expected_summary_path"])
+        expected_summary_path = suite.get("expected_summary_path")
+        expected_summary = load_json(expected_summary_path) if expected_summary_path else {}
         return json.loads(batch_input_text), model_output_text, human_labels, expected_summary
 
     return suite["batch_input"], suite["model_output_text"], suite["human_labels"], suite["expected_summary"]
